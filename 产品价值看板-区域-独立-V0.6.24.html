@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>产品价值看板</title>
+<!-- 自包含单文件：主题 / 数据 / 规则已内联；双页互跳请同时发送两个「-独立」文件 -->
+<style>
+/* 政法智慧法庭看板 · 教育看板配色（DESIGN.md §2.8 · 对齐 BGBU/教育/产品价值看板-区域.html）
+   变量名与教育原型一致：--canvas / --surface / --ink / --muted / --blue / --positive / --negative ... */
+:root {
+  color-scheme: light;
+  --canvas: #f5f6f9;
+  --surface: #fff;
+  --ink: #19212f;
+  --muted: #5a6779;
+  --subtle: #9faec1;
+  --line: #e6eaf1;
+  --divider: rgba(202, 213, 228, 0.36);
+  --card-hover-fill: rgba(202, 213, 228, 0.3);
+  --blue: #3e79f0;
+  --selected: #eaf0ff;
+  --radius: 9px;
+  --panel-radius: 8px;
+  --metric-radius: 8px;
+  --control: #eef0f5;
+  --metric: #f6f8fc;
+  --pending: #fafbfc;
+  --metric-border: #edf0f6;
+  --on-selected: #214cae;
+  --icon-bg: #e5edff;
+  --positive: #26aa66;
+  --negative: #e9585c;
+  --decline: #f09d1a;
+  --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-num: "DouyinSans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --gradient-brand: linear-gradient(90deg, #006ab7 0%, #008cd3 50%, #21b8c5 100%);
+  --chart-series: var(--blue);
+  --chart-line: #e8eef6;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --panel-radius: 16px;
+  --canvas: #171b25;
+  --surface: #212634;
+  --ink: #e9edf5;
+  --muted: #acb6c8;
+  --subtle: #a2afc3;
+  --line: #384154;
+  --divider: rgba(202, 213, 228, 0.12);
+  --card-hover-fill: #38445a;
+  --selected: #283c66;
+  --control: #30394c;
+  --metric: #262d3d;
+  --pending: #242a37;
+  --metric-border: #343d50;
+  --on-selected: #c5d5ff;
+  --icon-bg: #2c406a;
+  --chart-series: var(--blue);
+  --chart-line: var(--line);
+}
+
+* { box-sizing: border-box; }
+html { scrollbar-gutter: stable; }
+body {
+  margin: 0; background: var(--canvas); color: var(--ink);
+  font: 14px/1.5 var(--font);
+}
+h1, h2, h3, p, dl, dd { margin: 0; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:root:has(dialog[open]) { overflow: hidden; overscroll-behavior: none; }
+
+/* ───────── 通用控件 ───────── */
+.zhifa-select, .zhifa-btn {
+  appearance: none; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); border-radius: 8px; padding: 0 14px; height: 40px;
+  font: inherit; cursor: pointer;
+}
+select.zhifa-select {
+  padding-right: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--subtle) 50%), linear-gradient(135deg, var(--subtle) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 17px, calc(100% - 12px) 17px;
+  background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.zhifa-btn { display: inline-flex; align-items: center; justify-content: center; }
+.zhifa-btn.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.zhifa-btn.ghost, .zhifa-btn.reset { background: var(--control); border-color: transparent; }
+.zhifa-btn.small { height: 32px; padding: 0 10px; }
+.zhifa-btn:hover { filter: brightness(0.97); }
+.zhifa-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.zhifa-btn.linkish {
+  height: 28px; padding: 0 10px; font-size: 13px; color: var(--blue);
+  border-color: transparent; background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+}
+.zhifa-btn.linkish:hover { background: color-mix(in srgb, var(--blue) 18%, var(--surface)); filter: none; }
+a.zhifa-btn { text-decoration: none; }
+.zhifa-select:focus-visible, .zhifa-btn:focus-visible, .bg-tab:focus-visible,
+.side-nav a:focus-visible, .metric[role="button"]:focus-visible, .detail-close:focus-visible,
+.theme-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.theme-toggle {
+  flex: none; min-width: 32px; padding: 0 8px; white-space: nowrap; height: 32px; border: 0; border-radius: 8px; background: var(--control);
+  color: var(--muted); font: inherit; font-size: 13px; cursor: pointer;
+}
+
+/* ───────── 通用壳（产品详情页沿用） ───────── */
+.zhifa-wrap { max-width: 1460px; margin: 0 auto; padding: 20px 24px 64px; }
+.zhifa-wrap.narrow { max-width: 1280px; }
+.brand-line { height: 3px; background: var(--gradient-brand); border-radius: 2px; margin-bottom: 16px; }
+.zhifa-header { display: block; margin-bottom: 12px; }
+.zhifa-title-block { display: flex; flex-direction: column; gap: 10px; }
+.zhifa-title-row { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; }
+.zhifa-header h1 { margin: 0; font-size: 28px; line-height: 38px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); }
+.zhifa-sub { color: var(--muted); font-size: 13px; }
+.zhifa-head-right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.role-lab { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+.zhifa-notice {
+  background: var(--selected); color: var(--on-selected); border-radius: var(--metric-radius);
+  padding: 10px 14px; margin-bottom: 16px; font-size: 13px;
+}
+.zhifa-notice.inline {
+  display: inline-block; margin: 0 0 0 auto; padding: 6px 10px; font-size: 12px; line-height: 18px;
+  max-width: min(560px, 100%); vertical-align: middle;
+}
+.zhifa-card { background: var(--surface); border-radius: var(--panel-radius); padding: 18px 20px; margin-bottom: 16px; }
+.zhifa-card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+.zhifa-card .cap, .cap { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+.zhifa-empty {
+  padding: 28px; text-align: center; color: var(--subtle);
+  border: 1px dashed var(--line); border-radius: var(--metric-radius); background: var(--pending);
+}
+.zhifa-empty.soft { padding: 16px; margin-top: 8px; }
+
+.zhifa-badge {
+  display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; line-height: 18px;
+  border-radius: 4px; margin-left: 6px; vertical-align: middle;
+}
+.zhifa-badge.demo { background: color-mix(in srgb, var(--decline) 16%, var(--surface)); color: var(--decline); }
+.zhifa-badge.inner { background: color-mix(in srgb, var(--negative) 14%, var(--surface)); color: var(--negative); }
+
+.favorable { color: var(--positive); }
+.unfavorable { color: var(--negative); }
+.decline { color: var(--decline); }
+.flat { color: var(--muted); }
+
+/* ───────── 表格 ───────── */
+.table-scroll { overflow-x: auto; }
+/* 样板法院表：表内容器横纵滚动，才能稳定冻结首行 + 前 3 列（不锁死整页） */
+.table-scroll.court-scroll {
+  overflow: auto;
+  max-height: min(560px, calc(100vh - 220px));
+  border-radius: var(--metric-radius);
+  border: 1px solid var(--divider);
+  background: var(--surface);
+}
+.zhifa-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.zhifa-table th, .zhifa-table td {
+  border-bottom: 1px solid var(--divider); padding: 9px 8px; text-align: left; vertical-align: middle;
+}
+.zhifa-table thead th {
+  background: var(--metric); color: var(--muted); font-weight: 500; font-size: 12px; white-space: nowrap; border-bottom: 0;
+}
+.zhifa-table thead th:first-child { border-start-start-radius: var(--metric-radius); }
+.zhifa-table thead th:last-child { border-start-end-radius: var(--metric-radius); }
+.zhifa-table tbody td { white-space: nowrap; }
+.zhifa-table td.num { text-align: right; }
+.zhifa-table th.num { text-align: right; }
+.zhifa-table tbody tr:hover { background: var(--card-hover-fill); }
+.zhifa-table tr.is-active { background: var(--selected); }
+.zhifa-table .cell-value { font-weight: 700; color: var(--ink); }
+.zhifa-table .cell-value.favorable { color: var(--positive); }
+.zhifa-table .cell-value.unfavorable { color: var(--negative); }
+
+/* 样板法院表：冻结首行 + 前 3 列（省 / 市/区 / 法院）；窄表头换行 */
+.zhifa-table.court-freeze {
+  border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%;
+}
+.zhifa-table.court-freeze thead th {
+  position: sticky; top: 0; z-index: 4;
+  background: var(--metric);
+  box-shadow: 0 1px 0 var(--divider);
+}
+.zhifa-table.court-freeze .sticky-c1,
+.zhifa-table.court-freeze .sticky-c2,
+.zhifa-table.court-freeze .sticky-c3 {
+  position: sticky; z-index: 2; background: var(--surface);
+}
+.zhifa-table.court-freeze thead .sticky-c1,
+.zhifa-table.court-freeze thead .sticky-c2,
+.zhifa-table.court-freeze thead .sticky-c3 {
+  top: 0; z-index: 6; background: var(--metric);
+}
+.zhifa-table.court-freeze .sticky-c1 { left: 0; min-width: 88px; width: 88px; }
+.zhifa-table.court-freeze .sticky-c2 { left: 88px; min-width: 72px; width: 72px; }
+.zhifa-table.court-freeze .sticky-c3 {
+  left: 160px; min-width: 108px; width: 108px;
+  box-shadow: 4px 0 8px -4px rgba(25, 33, 47, 0.18);
+}
+.zhifa-table.court-freeze tbody tr:hover .sticky-c1,
+.zhifa-table.court-freeze tbody tr:hover .sticky-c2,
+.zhifa-table.court-freeze tbody tr:hover .sticky-c3 {
+  background: var(--card-hover-fill);
+}
+.zhifa-table.court-freeze th.th-wrap {
+  white-space: normal; line-height: 1.25; vertical-align: bottom;
+  max-width: 5.2em; min-width: 4.2em; padding-left: 6px; padding-right: 6px;
+}
+.zhifa-table.court-freeze th.th-wrap .zhifa-tip { margin-left: 2px; }
+.zhifa-table.court-freeze td.num-compact { padding-left: 6px; padding-right: 6px; }
+.zhifa-table.court-freeze td.desc-cell {
+  max-width: 220px; min-width: 160px; padding-top: 8px; padding-bottom: 8px;
+  font-size: 12px; line-height: 1.4; color: var(--ink); vertical-align: middle;
+}
+.zhifa-table.court-freeze .desc-clamp {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; white-space: normal; word-break: break-word;
+  max-height: 2.8em; cursor: help;
+}
+.table-tooltip.desc-tip {
+  max-width: min(480px, calc(100vw - 24px));
+  white-space: pre-wrap; line-height: 1.5;
+}
+.category-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 14px;
+}
+.category-toolbar > h3 { margin: 0; }
+.category-toolbar .zhifa-btn { flex: none; }
+
+.zhifa-att { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.zhifa-att span { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+.zhifa-att .pass { background: color-mix(in srgb, var(--positive) 14%, var(--surface)); color: var(--positive); }
+.zhifa-att .fail { background: color-mix(in srgb, var(--negative) 14%, var(--surface)); color: var(--negative); }
+.zhifa-att .pending { background: var(--control); color: var(--muted); }
+
+.zhifa-matrix { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
+.zhifa-matrix th, .zhifa-matrix td { padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--divider); }
+.zhifa-matrix thead th { background: var(--metric); color: var(--muted); font-weight: 500; font-size: 12px; border-bottom: 0; }
+.zhifa-matrix thead th:first-child { border-start-start-radius: var(--metric-radius); text-align: left; }
+.zhifa-matrix thead th:last-child { border-start-end-radius: var(--metric-radius); }
+.zhifa-matrix td:first-child { text-align: left; color: var(--muted); }
+.zhifa-matrix tr.hl td { background: var(--selected); }
+.zhifa-matrix td.good { color: var(--positive); font-weight: 700; }
+.zhifa-matrix td.bad { color: var(--negative); font-weight: 700; }
+.zhifa-matrix th.xf, .zhifa-matrix td.xf { background: var(--selected); font-weight: 700; }
+.dialect-cell { cursor: pointer; }
+.dialect-cell:hover { background: var(--card-hover-fill); }
+.dialect-guard {
+  font-weight: 500; color: var(--on-selected); margin-bottom: 10px !important;
+  padding: 8px 12px; background: var(--selected); border-radius: 6px; font-size: 13px;
+}
+.dialect-guard.inline {
+  display: inline-block; margin: 0 0 0 auto !important; padding: 4px 10px; font-size: 12px; font-weight: 500;
+  line-height: 18px; white-space: nowrap;
+}
+.dialect-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 0 10px;
+}
+.dialect-head h3 { margin: 0; }
+
+/* ───────── Tooltip（固定定位，避免被横向滚动容器裁切） ───────── */
+.zhifa-tip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; margin-left: 4px; border-radius: 50%;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  border: 1px solid var(--subtle); color: var(--subtle); cursor: help; vertical-align: middle;
+}
+.zhifa-tip:hover, .zhifa-tip:focus-visible { color: var(--blue); border-color: var(--blue); outline: none; }
+.table-tooltip {
+  position: fixed; z-index: 60; max-width: min(420px, calc(100vw - 16px)); padding: 8px 10px;
+  border-radius: 6px; background: var(--ink); color: var(--surface);
+  font-size: 12px; line-height: 18px; font-weight: 400; pointer-events: none; text-align: left; white-space: normal;
+}
+.table-tooltip .stage-line { margin: 0 0 6px; }
+.table-tooltip .stage-line:last-child { margin-bottom: 0; }
+.table-tooltip .stage-lv { font-weight: 700; color: #8fb2ff; }
+
+/* ───────── 区域页：Masthead / BG Tab / 筛选 ───────── */
+.masthead {
+  position: sticky; top: 0; z-index: 40; padding: 12px 24px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--canvas);
+  overflow: visible;
+}
+.masthead-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.masthead-actions {
+  display: flex; flex: none; align-items: center; justify-content: flex-end; gap: 12px; margin-left: auto;
+}
+.masthead .subtitle {
+  margin: 0; color: var(--muted); font-size: 13px; line-height: 22px; white-space: nowrap; text-align: right;
+}
+.masthead .subtitle time { font-variant-numeric: tabular-nums; }
+.masthead-actions .subtitle { margin: 0; }
+.bg-tabs {
+  display: inline-flex; flex: none; gap: 2px; padding: 3px; margin: 0;
+  border-radius: 8px; background: var(--selected);
+}
+.bg-tab {
+  appearance: none; border: 0; background: transparent; color: var(--on-selected);
+  font: inherit; font-weight: 600; padding: 6px 16px; border-radius: 6px; cursor: pointer;
+}
+.bg-tab:hover { background: rgba(62, 121, 240, 0.12); }
+.bg-tab.active { background: var(--blue); color: #fff; }
+:root[data-theme="dark"] .bg-tab.active { color: #fff; }
+/* 第二行：标题居左（对齐侧栏）；筛选+更新时间整体右齐主区右缘（更新时间最右） */
+.masthead-toolbar {
+  display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: center; gap: 12px;
+  margin-top: 10px; min-width: 0;
+}
+.masthead-toolbar h1 {
+  margin: 0; font-size: 28px; line-height: 38px; font-weight: 700; letter-spacing: -0.025em;
+}
+.masthead-toolbar-main {
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 12px;
+  min-width: 0; overflow: visible;
+}
+.masthead-toolbar .context {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 12px;
+  margin: 0; min-width: 0; max-width: 100%; overflow: visible;
+}
+.masthead-toolbar .masthead-updated {
+  margin: 0; flex: none; text-align: right; white-space: nowrap;
+}
+.context { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.context[hidden] { display: none; }
+@media (max-width: 960px) {
+  .masthead-toolbar { grid-template-columns: minmax(0, 1fr); }
+  .masthead-toolbar-main { justify-content: flex-start; }
+  .masthead-toolbar .context { justify-content: flex-start; }
+}
+.filter-field { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); position: relative; z-index: 1; }
+.filter-field:focus-within { z-index: 45; }
+.filter-field .zhifa-select { width: 168px; color: var(--ink); }
+.filter-field.region .zhifa-select { width: 200px; }
+.stage-btn { text-align: left; width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.court-btn { width: 220px; }
+.filter-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 240px; padding: 4px;
+  background: var(--surface); border-radius: 8px; box-shadow: 0 6px 16px #19212f1a;
+}
+.filter-menu[hidden] { display: none; }
+.filter-option {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px;
+  border-radius: 4px; color: var(--ink); font-size: 14px; cursor: pointer;
+}
+.filter-option:hover { background: var(--control); }
+.filter-option input { accent-color: var(--blue); }
+.filter-option-all {
+  border-bottom: 1px solid var(--line); margin-bottom: 2px; padding-bottom: 8px; font-weight: 600; color: var(--ink);
+}
+.court-menu { max-height: 280px; overflow: auto; min-width: 260px; }
+.filter-empty { padding: 10px 12px; color: var(--subtle); font-size: 13px; }
+.bg-empty { margin: 48px 28px; text-align: center; }
+.bg-empty .cap { margin-top: 10px; }
+
+/* ───────── 区域页：左导航 + 主区 ───────── */
+.layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: calc(100vh - 190px); }
+.side-nav { padding: 12px 9px; background: var(--surface); border-inline-end: 1px solid var(--canvas); }
+.side-nav-inner { position: sticky; top: calc(var(--masthead-h, 190px) + 12px); display: flex; flex-direction: column; gap: 2px; }
+.side-nav h2 { padding: 9px 8px 5px; font-size: 12px; font-weight: 400; line-height: 16px; color: var(--subtle); }
+.side-nav .line-title {
+  display: flex; align-items: center; gap: 9px; padding: 8px; color: var(--ink); font-size: 14px; line-height: 22px;
+}
+.side-nav a.product-link {
+  display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 8px 8px 20px; border-radius: 7px;
+  color: var(--ink); text-decoration: none;
+}
+.side-nav a.product-link[aria-current="location"] { background: var(--control); }
+@media (hover: hover) { .side-nav a.product-link:hover { background: var(--card-hover-fill); } }
+.product-icon {
+  display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 6px;
+  background: var(--icon-bg); color: var(--blue); font-size: 12px; font-weight: 700;
+}
+.line-title .product-icon, .side-nav a[aria-current="location"] .product-icon { background: var(--blue); color: var(--surface); }
+
+main.board-main { width: 100%; padding: 24px; min-width: 0; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px; }
+@media (max-width: 1100px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.summary > div {
+  display: grid; grid-template-rows: auto auto auto; row-gap: 4px; min-width: 0; min-height: 96px;
+  padding: 18px 20px; background: var(--surface); border-radius: 8px;
+}
+.summary dt,
+.metric .m-name {
+  display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  font: inherit; font-size: 14px; font-weight: 500; line-height: 22px; color: var(--ink);
+}
+.summary dt .label-text,
+.metric .m-name .label-text { min-width: 0; }
+.summary dd { font-family: var(--font-num); font-size: 28px; line-height: 32px; font-variant-numeric: tabular-nums; }
+.summary small { font-size: 12px; line-height: 18px; color: var(--subtle); }
+
+.line-heading {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 4px 10px;
+  margin-bottom: 13px; padding-inline-start: calc(var(--panel-radius) / 2);
+}
+.line-heading .product-icon { align-self: center; background: var(--blue); color: var(--surface); }
+.line-heading-text { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; min-width: 0; }
+.line-heading h2 { margin: 0; font-size: 18px; font-weight: 500; line-height: 28px; }
+.line-heading-text .zhifa-tip { align-self: center; }
+.attainment { display: inline-flex; align-items: baseline; gap: 8px; color: var(--subtle); font-size: 13px; white-space: nowrap; }
+.attainment > span + span { position: relative; padding-left: 8px; }
+.attainment > span + span::before {
+  content: ""; position: absolute; left: 0; top: 50%; width: 1px; height: 9px;
+  transform: translateY(-50%); background: var(--divider);
+}
+.product-detail-link {
+  display: inline-flex; align-items: center; align-self: center; gap: 4px; min-height: 32px;
+  margin-inline-start: auto; padding: 0 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--blue) 10%, var(--surface)); color: var(--blue);
+  font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap;
+}
+.product-detail-link:hover { background: color-mix(in srgb, var(--blue) 18%, var(--surface)); }
+.product-detail-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.product-detail-link svg { flex: none; }
+
+.line-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.category { margin: 0; padding: 18px 20px; background: var(--surface); border-radius: var(--panel-radius); min-width: 0; }
+.category > h3 { margin: 0 0 14px; font-size: 16px; font-weight: 700; color: var(--ink); }
+.category > h3.category-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+}
+.category > h3 .category-title { min-width: 0; }
+.category > h3 .sub { font-size: 12px; font-weight: 400; color: var(--subtle); margin-left: 8px; }
+.category.full { grid-column: 1 / -1; }
+@media (max-width: 960px) { .line-cards { grid-template-columns: minmax(0, 1fr); } .summary { grid-template-columns: minmax(0, 1fr); } }
+
+.metric {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 96px; padding: 12px;
+  background: var(--metric); border-radius: var(--metric-radius); border: 1px solid var(--metric-border);
+}
+.metric[role="button"] { cursor: pointer; }
+.metric[role="button"]:hover { background: var(--card-hover-fill); }
+.metric .metric-value { font-family: var(--font-num); font-size: 22px; line-height: 28px; font-variant-numeric: tabular-nums; }
+.metric-meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 3px; color: var(--subtle); font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.metric-meta > span + span { position: relative; padding-left: 8px; }
+.metric-meta > span + span::before { content: ""; position: absolute; left: 0; top: 50%; width: 1px; height: 9px; transform: translateY(-50%); background: var(--divider); }
+
+.zhifa-footer {
+  margin-top: 20px; padding: 14px 24px 32px; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+  color: var(--subtle); font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .side-nav-inner { position: static; }
+  .masthead { padding: 16px; position: static; }
+  main.board-main { padding: 16px; }
+}
+
+/* ───────── Dialog（指标 / 法院详情，居中弹窗） ───────── */
+.board-dialog {
+  width: min(1100px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow: auto; overscroll-behavior: contain;
+  padding: 0; border: 0; border-radius: 12px; background: var(--canvas); color: var(--ink); box-shadow: 0 8px 24px #0003;
+}
+.board-dialog.narrow { width: min(720px, calc(100% - 24px)); }
+.board-dialog::backdrop { background: #19212f66; }
+:root[data-theme="dark"] .board-dialog::backdrop { background: rgba(0, 0, 0, 0.82); }
+.detail-panel { --gap: 12px; padding: 16px 24px 24px; }
+.detail-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: var(--gap); }
+.detail-header h3 { margin: 0; font-size: 16px; font-weight: 500; }
+.detail-header .sub { color: var(--subtle); font-size: 13px; margin-top: 2px; }
+.detail-close {
+  flex: none; width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--muted); font: inherit; font-size: 19px; cursor: pointer;
+}
+.detail-close:hover { background: var(--control); }
+.detail-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); margin-top: var(--gap); }
+@media (max-width: 800px) { .detail-charts { grid-template-columns: minmax(0, 1fr); } }
+.detail-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; border-radius: 8px; padding: 14px 20px 14px; background: var(--surface); }
+.detail-card h5 {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  margin: 0; font-size: 14px; font-weight: 500; line-height: 22px;
+}
+.detail-values { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; }
+.detail-values .metric-value { font-family: var(--font-num); font-size: 28px; font-weight: 700; line-height: 34px; }
+.detail-values .metric-meta { margin: 0; }
+.detail-note { margin: 4px 0 0; font-size: 12px; color: var(--subtle); }
+.chart-plot { position: relative; min-height: 220px; }
+.chart-plot svg { width: 100%; height: auto; display: block; }
+.chart-plot svg text { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.chart-plot .axis { stroke: var(--chart-line); stroke-width: 1; }
+.chart-plot .chart-target { stroke: var(--subtle); stroke-dasharray: 4 4; opacity: 0.85; }
+.chart-plot .series { fill: none; stroke: var(--chart-series); stroke-width: 2.5; }
+.chart-plot .dot { fill: var(--chart-series); }
+.chart-plot .tick { fill: var(--subtle); font-size: 11px; }
+.chart-plot .goal-label { fill: var(--subtle); font-size: 10px; }
+.chart-legend { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; color: var(--subtle); font-size: 11px; font-weight: 400; white-space: nowrap; }
+.chart-legend::before { content: ""; width: 16px; border-top: 1px dashed var(--subtle); }
+.chart-legend-bar {
+  display: flex; justify-content: center; align-items: center; gap: 20px;
+  color: var(--muted); font-size: 12px; line-height: 18px;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-item.legend-series::before {
+  content: ""; width: 18px; border-top: 2.5px solid var(--chart-series);
+}
+.legend-item.legend-target::before {
+  content: ""; width: 18px; border-top: 1px dashed var(--subtle);
+}
+.rank-switch { display: inline-flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--control); }
+.rank-switch button {
+  border: 0; border-radius: 4px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; padding: 2px 8px; cursor: pointer;
+}
+.rank-switch button[aria-pressed="true"] { background: var(--surface); color: var(--ink); }
+.court-ranks { display: grid; grid-template-columns: fit-content(42%) minmax(0, 1fr) max-content; gap: 10px 12px; }
+.court-rank { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; font-size: 12px; line-height: 18px; }
+.court-name { text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.court-result { position: relative; min-width: 0; }
+.court-bar { display: block; height: 16px; border-radius: 4px; background: var(--chart-series); }
+.court-bar.is-bottom { background: var(--decline); }
+.court-target { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 1px dashed var(--subtle); }
+.court-value { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+.dialog-foot { margin-top: var(--gap); font-size: 12px; color: var(--subtle); }
+
+.court-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.court-grid .k { color: var(--muted); font-size: 12px; }
+.court-grid .v { font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.court-grid .v small { font-weight: 400; color: var(--subtle); }
+.story {
+  background: var(--metric); border-radius: var(--metric-radius); padding: 10px 12px; margin-bottom: 10px;
+  color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+}
+.story-h { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+
+/* ───────── 产品详情页（沿用类名，重上教育色） ───────── */
+.zhifa-kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 960px) { .zhifa-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.zhifa-kpi { background: var(--metric); border-radius: var(--metric-radius); padding: 14px 16px; }
+.zhifa-kpi .n { font-size: 14px; font-weight: 500; line-height: 22px; color: var(--ink); }
+.zhifa-kpi .v { font-family: var(--font-num); font-size: 24px; font-weight: 700; color: var(--ink); margin-top: 6px; letter-spacing: -0.02em; }
+.zhifa-kpi.is-pass .v { color: var(--positive); }
+.zhifa-kpi.is-fail .v { color: var(--negative); }
+.zhifa-kpi .s { font-size: 12px; color: var(--subtle); margin-top: 4px; line-height: 1.35; }
+
+.zhifa-chart-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; margin-bottom: 4px; }
+.zhifa-chart-head h2, .zhifa-chart-head h3 { margin: 0 0 4px; font-size: 14px; font-weight: 500; }
+.zhifa-chart-body { min-height: 160px; }
+.zhifa-svg { width: 100%; height: auto; display: block; }
+.zhifa-svg .goal-line { stroke: var(--subtle); stroke-width: 1; stroke-dasharray: 4 3; }
+.zhifa-svg .line { stroke-width: 2.5; }
+.zhifa-svg .line.usage { stroke: var(--blue); }
+.zhifa-svg .line.efficiency { stroke: var(--decline); }
+.zhifa-svg .dot.usage { fill: var(--blue); }
+.zhifa-svg .dot.efficiency { fill: var(--decline); }
+.zhifa-svg .tick { fill: var(--subtle); font-size: 11px; }
+.zhifa-legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+.zhifa-legend .sw { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.zhifa-legend .sw.usage { background: var(--blue); }
+.zhifa-legend .sw.efficiency { background: var(--decline); }
+
+.zhifa-fold-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; user-select: none; }
+.zhifa-fold-body { display: none; margin-top: 10px; }
+.zhifa-fold-body.open { display: block; }
+
+.product-layout .zhifa-header.product-mast {
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.product-layout .back-link { display: inline-block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--blue); }
+.product-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .product-body { grid-template-columns: 1fr; } }
+.product-nav {
+  position: sticky; top: 12px; display: flex; flex-direction: column; gap: 4px;
+  padding: 10px; border-radius: var(--panel-radius); background: var(--surface);
+}
+.product-nav a { padding: 8px 10px; border-radius: 7px; color: var(--ink); font-size: 14px; }
+.product-nav a:hover { background: var(--card-hover-fill); text-decoration: none; }
+.metric-now { margin-bottom: 10px; }
+.metric-now .now-v { font-family: var(--font-num); font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+.metric-now .now-v.is-pass,
+.metric-now .now-v.favorable { color: var(--positive); }
+.metric-now .now-v.is-fail,
+.metric-now .now-v.unfavorable { color: var(--negative); }
+.product-filters {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px;
+  margin: 0 0 16px; padding: 12px 16px; position: relative; z-index: 20;
+  background: var(--surface); border-radius: 8px;
+}
+.product-filters .masthead-updated {
+  margin: 0 0 0 auto; flex: none; color: var(--muted); font-size: 13px; line-height: 22px;
+  white-space: nowrap; text-align: right;
+}
+.product-filters .masthead-updated time { font-variant-numeric: tabular-nums; }
+.product-main .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) {
+  .product-main .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .product-main .summary { grid-template-columns: minmax(0, 1fr); }
+  .product-filters .masthead-updated { margin-left: 0; }
+}
+.product-mast .masthead-actions { margin-left: 0; }
+.masthead-actions .subtitle { margin: 0; }
+.product-metric-charts { margin-top: 12px; }
+.product-metric-charts .detail-card {
+  background: var(--metric); border: 1px solid var(--line, transparent);
+}
+.product-metric-charts .chart-legend-bar { margin: 4px 0 8px; }
+.zhifa-table.compact th, .zhifa-table.compact td { padding: 6px 8px; font-size: 13px; }
+.zhifa-fold-body { display: none; margin-top: 10px; }
+.zhifa-fold-body.open { display: block; }
+.critical-block { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--divider); }
+
+/* ───────── 历史单页（政法产品价值看板.src.html）仍引用的少量类 ───────── */
+.zhifa-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.zhifa-tab {
+  appearance: none; border: 0; background: transparent; color: var(--muted);
+  font: inherit; font-weight: 600; padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.zhifa-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.zhifa-panel { display: none; }
+.zhifa-panel.active { display: block; }
+.zhifa-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.zhifa-chip {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 600;
+  background: var(--selected); color: var(--on-selected); cursor: pointer;
+}
+.zhifa-chip.near, .zhifa-chip.empty { background: var(--control); color: var(--muted); cursor: default; }
+.zhifa-chip .ev { font-weight: 500; color: var(--muted); font-size: 12px; }
+.zhifa-rec { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; padding: 10px 12px; background: var(--surface); border-radius: var(--metric-radius); }
+.zhifa-rec .label { color: var(--muted); font-size: 13px; }
+.zhifa-tag { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; background: var(--surface); border: 1px solid var(--line); }
+.zhifa-dual-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.zhifa-expand { background: var(--metric); border-radius: var(--metric-radius); padding: 12px; margin: 4px 0 10px; }
+.zhifa-expand .k { color: var(--muted); font-size: 12px; }
+.zhifa-expand .v { font-weight: 600; }
+.zhifa-expand .story { margin-top: 8px; }
+.zhifa-expand .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 14px; }
+.zhifa-bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
+.zhifa-bar-row .name { width: 72px; flex-shrink: 0; font-weight: 600; }
+.zhifa-bar-row .val { width: 64px; text-align: right; flex-shrink: 0; color: var(--muted); }
+.zhifa-bar-track { flex: 1; height: 10px; background: var(--control); border-radius: 999px; overflow: hidden; position: relative; }
+.zhifa-bar-fill { height: 100%; background: var(--blue); border-radius: 999px; }
+.zhifa-bar-fill.pass { background: var(--positive); }
+.zhifa-bar-fill.fail { background: var(--negative); }
+.zhifa-seg { display: inline-flex; border-radius: 999px; overflow: hidden; background: var(--control); }
+.zhifa-seg button { appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; cursor: pointer; }
+.zhifa-seg button.active { background: var(--blue); color: #fff; }
+
+</style>
+
+
+</head>
+<body>
+<header class="masthead" id="masthead">
+  <div class="masthead-top">
+    <nav class="bg-tabs" role="tablist" aria-label="业务集团">
+      <button type="button" class="bg-tab active" data-bg="zhifa" role="tab" aria-selected="true">政法</button>
+      <button type="button" class="bg-tab" data-bg="medical" role="tab" aria-selected="false">医疗</button>
+      <button type="button" class="bg-tab" data-bg="edu" role="tab" aria-selected="false">教育</button>
+    </nav>
+    <div class="masthead-actions">
+      <label class="role-lab">角色
+        <select id="role" class="zhifa-select small" title="原型权限模拟（传给产品详情页）">
+          <option value="sales">区域销售</option>
+          <option value="lead">政法负责人</option>
+          <option value="rd">产研</option>
+        </select>
+      </label>
+      <button type="button" class="theme-toggle" id="btnTheme" title="切换浅/深色" aria-label="切换浅/深色">深/浅</button>
+    </div>
+  </div>
+  <div class="masthead-toolbar">
+    <h1>产品价值看板</h1>
+    <div class="masthead-toolbar-main">
+      <div class="context" id="zhifaFilters">
+        <label class="filter-field">季度 <select id="period" class="zhifa-select"></select></label>
+        <div class="filter-field" id="provMs">
+          <span>省</span>
+          <button type="button" class="zhifa-select stage-btn" id="provMsBtn" aria-haspopup="true" aria-expanded="false">全部省</button>
+          <div class="filter-menu" id="provMsPanel" hidden></div>
+        </div>
+        <div class="filter-field" id="stageMs">
+          <span>阶段</span>
+          <button type="button" class="zhifa-select stage-btn" id="stageMsBtn" aria-haspopup="true" aria-expanded="false">全部阶段</button>
+          <div class="filter-menu" id="stageMsPanel" hidden>
+            <label class="filter-option filter-option-all"><input type="checkbox" data-select-all="stage" checked /> 全选</label>
+            <label class="filter-option"><input type="checkbox" data-stage="L3" checked /> L3</label>
+            <label class="filter-option"><input type="checkbox" data-stage="L4" checked /> L4</label>
+            <label class="filter-option"><input type="checkbox" data-stage="L5" checked /> L5</label>
+          </div>
+        </div>
+        <div class="filter-field" id="courtMs">
+          <span>法院</span>
+          <button type="button" class="zhifa-select stage-btn court-btn" id="courtMsBtn" aria-haspopup="true" aria-expanded="false">全部法院</button>
+          <div class="filter-menu court-menu" id="courtMsPanel" hidden></div>
+        </div>
+        <button type="button" class="zhifa-btn reset" id="btnReset">重置</button>
+        <p class="subtitle masthead-updated" id="mastheadUpdated" title="演示数据源文件的修改时间">数据更新时间 <time datetime="2026-11-17T09:00+08:00">2026-11-17 09:00</time></p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="bgEmpty" class="bg-empty" hidden>
+  <div class="zhifa-empty">建设中 · 本期未接入</div>
+  <p class="cap">医疗 / 教育 Tab 为空态占位，证明总体区域壳；指标口径不在本页定义。</p>
+</div>
+
+<div id="bgZhifa">
+  <div class="layout">
+    <aside class="side-nav" aria-label="产品线导航">
+      <div class="side-nav-inner">
+        <h2>产品线</h2>
+        <div class="line-title"><span class="product-icon">办</span><span>智慧办案场所</span></div>
+        <a class="product-link" href="#sec-product" aria-current="location"><span class="product-icon">法</span><span>智慧法庭</span></a>
+      </div>
+    </aside>
+
+    <main class="board-main" id="sec-product">
+      <dl class="summary" id="kpiCards"></dl>
+
+      <header class="line-heading">
+        <span class="product-icon" aria-hidden="true">法</span>
+        <div class="line-heading-text">
+          <h2>智慧法庭</h2>
+          <span id="productTip"></span>
+          <span class="attainment" id="productAttainment"></span>
+        </div>
+        <a class="product-detail-link" id="btnProduct" href="#">查看详情<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </header>
+
+      <div class="line-cards">
+        <section class="category" aria-label="成效">
+          <h3>成效</h3>
+          <div id="cardEfficiency"></div>
+        </section>
+        <section class="category" aria-label="活跃度">
+          <h3>活跃度</h3>
+          <div id="cardUsage"></div>
+        </section>
+        <section class="category full" id="dialectSection" aria-label="关键特性与质量">
+          <h3 class="category-head">
+            <span class="category-title">关键特性与质量<span class="sub">方言口音识别率</span></span>
+            <span class="dialect-guard inline">产品方言片区评测（非本院开庭成绩）</span>
+          </h3>
+          <div class="table-scroll" id="dialectMatrix"></div>
+        </section>
+        <section class="category full" aria-label="样板法院">
+          <div class="category-toolbar">
+            <h3>样板法院<span class="sub">成效 / 活跃度明细</span></h3>
+            <button type="button" class="zhifa-btn small" id="btnExportCourts">导出 Excel</button>
+          </div>
+          <div class="table-scroll court-scroll" id="courtTableWrap"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<footer class="zhifa-footer">
+  <div>口径见《政法产品成效指标-表结构拆解》· PRD V0.6.14-dual · 配色见 DESIGN.md §2.8 board tokens（对齐教育专题）· 样板法院表可导出 Excel</div>
+</footer>
+
+<dialog class="board-dialog" id="metricDialog" aria-labelledby="metricTitle">
+  <div class="detail-panel" id="metricPanel"></div>
+</dialog>
+
+<script>
+/**
+ * 智慧法庭看板 · 演示数据
+ * 样板点描述/分子分母/时长：取自《政法产品成效指标-填报模板》Q3 成效&活跃度；
+ * 方言/重大错误/竞品：表结构拆解样例；趋势：演示序列
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.ZhifaData = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var TARGETS = {
+    usage: 0.85,
+    efficiency: 0.4,
+    dialect: 0.85,
+    criticalError: 0.05
+  };
+
+  var PERIODS = ['2026Q3'];
+
+  /**
+   * 全国样板多季趋势演示基线（≥4 季；须标「演示数据」）
+   * 经 ZhifaRules.scopedMetricTrend 叠省∩阶段∩法院：
+   * 当期季用筛选内样板聚合，历史季按「当前范围/全国同阶段」系数缩放本序列。
+   */
+  var TREND_DEMO = {
+    sourceType: 'demo',
+    periods: ['2025Q4', '2026Q1', '2026Q2', '2026Q3'],
+    usage: [0.68, 0.72, 0.78, 0.81],
+    efficiency: [0.31, 0.34, 0.38, 0.45]
+  };
+
+  /** 原型角色：sales 禁展重大错误；lead/rd 可展开 */
+  var ROLES = ['sales', 'lead', 'rd'];
+
+  var PRODUCT = {
+    code: '10050110',
+    name: '智慧法庭解决方案',
+    line: '智慧办案场所产品线',
+    org: '政法军团'
+  };
+
+  /** 样板成熟度 L1–L5（与表结构拆解 §1.2.1 / PRD §5.11 一致） */
+  var STAGE_DEFS = [
+    {
+      level: 'L1',
+      name: '样板选择&试点目标确认（尚未启动）',
+      short: '样板选择',
+      criteria: '明确省内样板客户；明确书记员痛点；建立客户关系（客户可以主动对外讲解产品）；明确政治站位机会'
+    },
+    {
+      level: 'L2',
+      name: '成效打造阶段',
+      short: '成效打造',
+      criteria: '获得本级法院领导认可，进一步向高院传递价值'
+    },
+    {
+      level: 'L3',
+      name: '本级客户认可&区域示范效应',
+      short: '区域示范',
+      criteria: '可参观、可复制、带动参观、带来商机'
+    },
+    {
+      level: 'L4',
+      name: '渠道开拓&规模复制',
+      short: '规模复制',
+      criteria: '全省渠道建设，以地市为单位「跑圈挂图」行动'
+    },
+    {
+      level: 'L5',
+      name: '高院认可或标准规范出台',
+      short: '高院认可',
+      criteria: '获得高院副院长以上认可，或标准规范出台；与高院形成试点或应用规范，标准向下落地'
+    }
+  ];
+
+  function stageDef(level) {
+    for (var i = 0; i < STAGE_DEFS.length; i++) {
+      if (STAGE_DEFS[i].level === level) return STAGE_DEFS[i];
+    }
+    return null;
+  }
+
+  function benchFromStage(stage) {
+    return stage === 'L5' ? '全国' : '省级';
+  }
+
+  var courtSeed = [
+    { province: "四川省", city: "成都", name: "武侯法院", stage: "L5", usage: 0.9879, efficiency: 0.59, usageNum: 573, usageDen: 580, usageDenSource: "sample", tradMin: 49.6, smartMin: 20.3, shortenMin: 29.3, usageDesc: "全国基层法院示范标杆。武侯法院年收案超 6 万件，案件体量居成都基层法院首位，人案矛盾突出。2024 年 7 月启动 AI 书记员模式建设，截至 2026 年 7 月，全院 38 个法庭已全部完成智慧法庭部署，其中立案庭 3 间法庭全面应用 AI 书记员模式开庭。\n2026 年 Q3，立案庭 3 间法庭累计开庭 580 庭次，其中 AI 书记员应用 573 庭次，AI 书记员开庭使用率 98.79%。\n武侯法院的实践在全省乃至全国法院数字化转型中发挥了标杆示范效应，其\"诸葛·星火\"庭审记录数字化改革项目获评 2026 政法装备展创新案例。", efficiencyDesc: "应用系统前，平均开庭时长49.6分钟，应用系统后，平均庭审时长20.3分钟，庭审时长有效缩短29.3分钟，庭审效率提升59%。" },
+    { province: "广东省", city: "深圳", name: "深圳中院", stage: "L5", usage: 0.223, efficiency: 0.4074, usageNum: 334, usageDen: 1497, usageDenSource: "sample", tradMin: 27.0, smartMin: 16.0, shortenMin: 11.0, usageDesc: "作为全国中级法院示范标杆，该院于 2026 年 3 月启动试点工作。依托广东高院无纸化法庭建设经验打造样板阵地：试点仅 2 个月，法庭数量由 1 间扩容至 21 间，占全院法庭总数的 29%；\nQ3季度，累计开庭1497场，其中Ai书记员应用 334场次，AI 书记员开庭使用率 22.3%。\n6 月 10 日，院党组审议通过“语音智能转写 + 集成智辅庭审软件 + 庭后笔录规整”综合解决方案，依托于该样板间，达成深圳市两级法院的规模化推广，辐射罗湖、福田、龙岗等法院。同年，该院案例获评 2026 政法装备展创新案例。", efficiencyDesc: "应用系统前，平均庭审时长为27分钟，应用系统后，平均庭审时长为16分钟，庭审时长有效缩短11分钟，庭审效率提升40.74%。" },
+    { province: "安徽省", city: "合肥", name: "合肥中院", stage: "L3", usage: 0.671, efficiency: 0.39, usageNum: 412, usageDen: 614, usageDenSource: "sample", tradMin: 48.4, smartMin: 29.5, shortenMin: 18.9, usageDesc: "全国中级法院示范样板间，2026年7月开始建设，落地1间智慧法庭，采用驻庭速录员结合Ai实时辅助人机协同模式，截止目前，系统辅助民三庭8位法官常态化应用。\nQ3季度，累计开庭 614 庭次，其中 AI 书记员开庭 412 庭次，AI 书记员开庭使用率 67.10%。\n应用系统后，多位法官对整体模式表示认可，综合评分8分。普遍对语音转写和无纸化电子补充证据和电子签名表示认可，认为可明显提升效率", efficiencyDesc: "应用系统前，平均开庭时长48.4分钟，应用系统后，平均庭审时长29.5分钟，庭审时长有效缩短18.9分钟，庭审效率提升39%。" },
+    { province: "广东省", city: "深圳", name: "龙华区法院", stage: "L5", usage: 0.8941, efficiency: 0.63, usageNum: 1562, usageDen: 1747, usageDenSource: "sample", tradMin: 60.0, smartMin: 22.0, shortenMin: 38.0, usageDesc: "全国 AI 书记员最佳应用模式标杆样板间。该院常年收案 8 万件以上，人案矛盾突出。上线智慧法庭后，该院改革传统书记员驻庭现场速录的做法，推行\"法官坐诊式开庭\"集约化管理模式，书记员配置由 10 人精简至 3 人，人员压缩 70%。自 2024 年 4 月上线应用以来，全院 35 间法庭已全部完成智慧法庭部署；其中 10 间速裁法庭全面应用 AI 书记员模式庭审，并常态化运行，形成\"书记员到庭＋法官自主庭审＋AI 自动生成笔录＋庭后 AI 辅助笔录核对\"的完整业务模式。\nQ3 季度，10间法庭累计开庭 1747 庭次，其中 AI 书记员开庭 1562 庭次，AI 书记员开庭使用率 89.41%。", efficiencyDesc: "应用系统前，单庭平均时长约 60 分钟；应用系统后，平均庭审时长 22 分钟，有效缩短38分钟，庭审效率提升 63%。" },
+    { province: "河南省", city: "金水", name: "金水法院", stage: "L4", usage: 0.9047, efficiency: 0.5102, usageNum: 4661, usageDen: 5152, usageDenSource: "sample", tradMin: 49.0, smartMin: 24.0, shortenMin: 25.0, usageDesc: "全国基层法院规模化应用标杆，该院收案量长期位居全省基层法院前列，人案矛盾突出。2024 年 3 月启动建设，庭审辅助模式由书记员驻庭现场速录，转型为\"庭前准备＋办公室审判辅助支撑\"模式；26年Q3季度，成功中标金水二期，并完成建设，法庭由原有 28 间拓展至 65 间，实现全院覆盖，目前该样板已规模化稳定运行，形成\"书记员庭前辅助＋法官主导庭审＋AI 自动生成笔录＋庭后 AI 辅助回溯核对\"的完整业务模式。\nQ3 季度，累计开庭 5152 庭次，其中 AI 书记员开庭 4661 庭次，AI 书记员开庭使用率 90.47%。\n该模式下书记员职能从单纯的庭审记录事务，转向卷宗归档、电子送达、文书草拟、阅卷等高价值审判辅助工作，探索出基层法院数字审判的特色路径，形成数字审判\"金水模式\"。", efficiencyDesc: "应用系统前，平均庭审时长49分钟，应用系统后，平均庭审时长24分钟，庭审时长有效缩短25分钟，庭审效率提升51.02%。" },
+    { province: "吉林省", city: "吉林", name: "吉林长春", stage: "L5", usage: 0.8429, efficiency: 0.4911, usageNum: 703, usageDen: 834, usageDenSource: "sample", tradMin: 50.6, smartMin: 25.7, shortenMin: 24.9, usageDesc: "全国首个实现市两级规模化应用的地区，2025 年 4 月，长春两级法院共 16 家开展庭审记录数字化改革业务；此后应用逐步成熟，并辐射至全省，截至 2026 年 5 月 28 日，全省共 92 家法院、490 间法庭可开展庭审记录数字化改革业务，覆盖用户 331 名。其中，长春汽开法院为 AI 书记员应用标杆样板间。\nQ3 季度，长春汽开法院累计开庭 834 庭次，其中 AI 书记员开庭 703 庭次，AI 书记员开庭使用率 84.29%。\n全省各中基层法院公众号共发布宣传推文 41 篇，省院转发 12 篇，另有双阳法院投稿文章被最高法《司法科技前沿》采用刊发 1 篇。", efficiencyDesc: "应用系统前，平均开庭时长50.6分钟，应用系统后，平均庭审时长25.7分钟，庭审时长有效缩短24.9分钟，庭审效率提升49.11%。" },
+    { province: "宁夏回族自治区", city: "宁夏", name: "金凤法院", stage: "L3", usage: 0.8, efficiency: 0.4392, usageNum: 36, usageDen: 45, usageDenSource: "sample", tradMin: 25.5, smartMin: 14.3, shortenMin: 11.2, usageDesc: "宁夏首个AI书记员样板间，2026年8月初启动试点，处于建设初期，落地1间智慧法庭，应用后，试点用户已弃用竞品法庭，并对我方系统认可度极高。\n9月份，累计开庭45庭次，Ai书记员开庭36庭次，Ai书记员开庭使用率80%。", efficiencyDesc: "应用系统前，平均开庭时长25.5分钟，应用系统后，平均庭审时长14.3分钟，庭审时长有效缩短11.2分钟，庭审效率提升43.92%。" },
+    { province: "重庆市", city: "重庆", name: "九龙坡", stage: "L3", usage: 0.6979, efficiency: 0.55, usageNum: 67, usageDen: 96, usageDenSource: "sample", tradMin: 40.0, smartMin: 18.0, shortenMin: 22.0, usageDesc: "重庆市首个Ai书记员样板间，依托样板建设成效实现重庆市智慧法庭市场破局。项目于 2026 年 8 月底启动试点；\n9 月份，累计开庭 96 庭次，其中 AI 书记员开庭 67 庭次，AI 书记员庭审使用率 69.79%。\n同期完成一把手院长现场观摩 AI 书记员真实庭审应用。樊院长对落地成效予以充分肯定，明确提出扩大系统试用范围、锚定庭审改革推进方向等重点部署，为我司实现重庆市场业务破局奠定坚实基础。", efficiencyDesc: "应用系统前，平均开庭时长40分钟，应用系统后，平均庭审时长18分钟，庭审时长有效缩短22分钟，庭审效率提升 55%。" },
+    { province: "新疆维吾尔自治区", city: "新疆", name: "昌吉法院", stage: "L5", usage: 0.7846, efficiency: 0.59, usageNum: 51, usageDen: 65, usageDenSource: "sample", tradMin: 69.0, smartMin: 28.0, shortenMin: 41.0, usageDesc: "全疆首个特色智慧法庭样板间，落地 1 间智慧法庭。自 2025 年 11 月上线至今年 8 月，共有 6 名法官试用 AI 书记员庭审模式，现已实现 1 名法官常态化应用。系统上线 8 个月，法官逐步熟练掌握操作，对庭审节奏把控、案件适用甄别能力持续提升，Ai书记员开庭率稳步增长，已建立稳定可持续的应用模式。 \nQ3季度，该法官累计开庭 65 庭次，其中 AI 书记员开庭 51 庭次，AI 书记员开庭使用率 78.46%。\n通过模式转型，原有书记员从庭审记录事务中释放，转向调解等更高价值的审判辅助工作，有效释放办案精力。", efficiencyDesc: "应用系统前，平均庭审时长69分钟，应用系统后，平均庭审时长28分钟，庭审时长有效缩短41分钟，庭审效率提升59%。" },
+    { province: "湖南省", city: "湖南", name: "岳麓区法院", stage: "L5", usage: 0.7603, efficiency: 0.333, usageNum: 314, usageDen: 413, usageDenSource: "sample", tradMin: 48.0, smartMin: 32.0, shortenMin: 16.0, usageDesc: "湖南省首个 AI 书记员应用样板间，自 2025 年 7 月启动建设，目前已建成 10 间融合法庭，截止目前累计开庭 4712 场；2026年8月 AI 书记员法庭由 2 间拓展至 7 间。\n9 月，7 间法庭累计开庭 413 庭次，其中 AI 书记员开庭 314 庭次，AI 书记员开庭使用率 76.03%。\n宣传与示范效应：4 月 23 日，省高院将《岳麓区无书记员庭审模式》纳入全省信息化创新案例发布，形成全省标杆宣传效应；9 月 24 日，该院官方公众号发布《科技助攻，这场实训解锁庭审新能力！》专项推文，全面展示建设成果、实训成效与科技赋能司法的创新举措。", efficiencyDesc: "应用系统前，平均开庭时长48分钟，应用系统后，平均庭审时长 32 分钟，庭审时长有效缩短16分钟，庭审效率提升 33.3%。" },
+    { province: "天津市", city: "天津", name: "武清法院", stage: "L5", usage: 0.927, efficiency: 0.48, usageNum: 2439, usageDen: 2632, usageDenSource: "sample", tradMin: 50.0, smartMin: 26.0, shortenMin: 24.0, usageDesc: "全国首个AI书记员先行样板间。该院自2022年首批试点启动，历经多年应用打磨，现已实现全院54个法庭全覆盖，完成从探索试水到成熟应用的跨越；超八成案件常态化应用AI书记员，创新采用庭后集约精简模式，构建起\"法官全程独立开庭+庭后精简辅助回溯庭审+上诉案件AI辅助快速精标\"的完整业务模式；截至目前，适用庭审记录改革模式开庭累计超4.5万件，法官使用覆盖率近80%。\nQ3季度，累计开庭2632庭次，其中AI书记员开庭2439庭次，AI书记员开庭使用率92.7%。\n基于该模式，书记员不再全程跟庭记录，工作重心彻底转向庭前送达、当事人联系、电子卷宗整理等事务性工作，有效提升庭审效率，\"人手还是那些人，但精力用在了刀刃上\"。", efficiencyDesc: "应用系统前，平均开庭时长50分钟，应用系统后，平均庭审时长26分钟，庭审时长有效缩短24分钟，庭审效率提升48%。" },
+    { province: "云南省", city: "云南", name: "大理法院", stage: "L3", usage: 0.991, efficiency: 0.24, usageNum: 439, usageDen: 443, usageDenSource: "sample", tradMin: 33.0, smartMin: 25.0, shortenMin: 8.0, usageDesc: "云南省首个智慧法庭样板，2026 年 6 月启动建设，完成1间法庭部署，目前试点已覆盖 6 个业务部门、18 名法官，其中 2 名法官实现常态化应用，采用\"法官庭中精简\"模式，通过 AI 实时精简辅助庭审记录。\nQ3 季度，累计开庭 443 庭次，其中 AI 书记员开庭 439 庭次，AI 书记员开庭使用率 99.10%。\n该模式在现有庭审效率基础上可进一步提升：一是 AI 实时自动生成记录，全程无需法官干预笔录；二是 AI 自动提炼发言要点，法官可快速把握争议核心、缩短理解与归纳过程；三是庭审节奏把控更为主动顺畅。", efficiencyDesc: "应用系统前，平均庭审时长33分钟，应用系统后，平均庭审时长25分钟，庭审时长有效缩短8分钟，庭审效率提升24%。" },
+    { province: "江苏省", city: "江苏", name: "海门法院", stage: "L3", usage: 0.9956, efficiency: 0.4, usageNum: 225, usageDen: 226, usageDenSource: "sample", tradMin: 50.0, smartMin: 30.0, shortenMin: 20.0, usageDesc: "江苏省首个 AI 书记员样板间，自 2025 年 4 月起，海门法院启动\"AI 书记员庭审模式\"改革试点，首批 1 间法庭应用；2025 年 12 月进一步扩大范围，目前已覆盖 2 间法庭、13 名法官，实现常态化应用。\nQ3 季度，累计开庭 226 庭次，其中 AI 书记员开庭 225 庭次，AI 书记员开庭使用率 99.56%。\n该院累计接待最高法及全国各地法院来访超 150 人次，获各级领导高度认可；促成扬州江都地区约 100 万元项目合作，并为连云港、新疆、内蒙古等地的推广奠定基础。", efficiencyDesc: "应用系统前，平均开庭时长50分钟，应用系统后，平均庭审时长30分钟，庭审时长有效缩短20分钟，庭审效率提升40%。" },
+    { province: "山东省", city: "青岛", name: "市北区法院", stage: "L3", usage: 0.4107, efficiency: 0.41, usageNum: 635, usageDen: 1546, usageDenSource: "sample", tradMin: 32.3, smartMin: 18.9, shortenMin: 13.4, usageDesc: "山东省首个AI书记员样板间，应用自 2024 年 12 月 11 日启动试点，一期 2 间法庭应用成效良好，法官主动提出扩大应用需求；2026 年 3 月应用范围进一步扩大，由 2 间扩至 19 间法庭，7月开展全院培训，实现规模化应用。该院以\"全流程数字化、庭审智能化\"为目标，围绕民事、商事、家事等主要业务流程，聚焦庭审记录、案件信息处理等关键场景开展系统性规划；2025 年 3 月，下发《关于无书记员庭审模式改革的实施办法》。\nQ3 季度，累计开庭 1546 庭次，其中 AI 书记员开庭 635 庭次，AI 书记员开庭使用率 41.07%。", efficiencyDesc: "应用系统前，平均开庭时长为32.3分钟，应用系统后，平均庭审时长18.9分钟，庭审时长有效缩短13.4分钟，庭审效率提升41%。" }
+  ];
+
+  var COURTS = courtSeed.map(function (c, i) {
+    return {
+      id: 'c' + (i + 1),
+      period: '2026Q3',
+      province: c.province,
+      city: c.city,
+      name: c.name,
+      stage: c.stage,
+      benchmark: benchFromStage(c.stage),
+      benchmarkSource: 'demo',
+      usage: c.usage,
+      usageNum: c.usageNum,
+      usageDen: c.usageDen,
+      usageDenSource: c.usageDenSource,
+      efficiency: c.efficiency,
+      tradMin: c.tradMin,
+      smartMin: c.smartMin,
+      shortenMin: c.shortenMin,
+      usageDesc: c.usageDesc,
+      efficiencyDesc: c.efficiencyDesc,
+      sourceType: 'official'
+    };
+  });
+
+  var dialectWide = [
+    { province: '安徽省', a: 0.91, b: 0.8826, c: 0.8171 },
+    { province: '河南省', a: 0.8961, b: 0.8875, c: 0.8588 },
+    { province: '浙江省', a: 0.9263, b: 0.8974, c: 0.6341 },
+    { province: '广东省', a: 0.8764, b: null, c: 0.7322 },
+    { province: '江苏省', a: null, b: null, c: null }
+  ];
+
+  var ACCENTS = ['口音一般', '口音明显', '方言'];
+  var DIALECT_ROWS = [];
+  dialectWide.forEach(function (row) {
+    var vals = [row.a, row.b, row.c];
+    ACCENTS.forEach(function (accent, i) {
+      DIALECT_ROWS.push({
+        period: '2026Q3',
+        province: row.province,
+        accent: accent,
+        acc: vals[i]
+      });
+    });
+  });
+
+  function crit(scene, infoType, total, errors) {
+    var rate = total == null || errors == null ? null : errors / total;
+    return {
+      period: '2026Q3',
+      scene: scene,
+      infoType: infoType,
+      total: total,
+      errors: errors,
+      rate: rate
+    };
+  }
+
+  var CRITICAL_ERRORS = [
+    crit('法庭', '人名', 3408, 916),
+    crit('法庭', '金额', null, null),
+    crit('法庭', '机构/组织名', 1325, 151),
+    crit('法庭', '地点', 1120, 157),
+    crit('法庭', '专业术语', 10962, 438),
+    crit('法庭', '合计', 16815, 1662),
+    crit('纪委', '人名', 114, 17),
+    crit('纪委', '金额', 74, 8),
+    crit('纪委', '机构/组织名', 115, 27),
+    crit('纪委', '地点', null, null),
+    crit('纪委', '专业术语', null, null),
+    crit('纪委', '合计', 303, 52),
+    crit('监狱', '人名', null, null),
+    crit('监狱', '金额', null, null),
+    crit('监狱', '机构/组织名', null, null),
+    crit('监狱', '地点', null, null),
+    crit('监狱', '专业术语', null, null),
+    crit('监狱', '合计', null, null)
+  ];
+
+  var COMPETITORS = {
+    period: '2026Q3',
+    sourceType: 'demo',
+    vendors: ['讯飞', '华宇', '华夏', '新视云', '天宇威视', '通达海', '云嘉'],
+    rows: [
+      { metric: '识别准确率 (Acc)', values: { 讯飞: 0.942, 华宇: 0.918, 华夏: 0.905, 新视云: 0.897, 天宇威视: 0.889, 通达海: 0.901, 云嘉: 0.884 } },
+      { metric: '正确率 (Corr)', values: { 讯飞: 0.931, 华宇: 0.912, 华夏: 0.898, 新视云: 0.89, 天宇威视: 0.882, 通达海: 0.895, 云嘉: 0.876 } },
+      { metric: '数字识别准确率', values: { 讯飞: 0.956, 华宇: 0.941, 华夏: 0.928, 新视云: 0.92, 天宇威视: 0.915, 通达海: 0.933, 云嘉: 0.908 } },
+      { metric: '专有名词识别准确率', values: { 讯飞: 0.908, 华宇: 0.895, 华夏: 0.872, 新视云: 0.861, 天宇威视: 0.854, 通达海: 0.879, 云嘉: 0.848 } },
+      { metric: '法律术语识别准确率', values: { 讯飞: 0.927, 华宇: 0.901, 华夏: 0.886, 新视云: 0.874, 天宇威视: 0.868, 通达海: 0.892, 云嘉: 0.855 } },
+      { metric: '行业术语识别准确率', values: { 讯飞: 0.914, 华宇: 0.903, 华夏: 0.891, 新视云: 0.88, 天宇威视: 0.872, 通达海: 0.898, 云嘉: 0.861 } },
+      { metric: '格式合规准确率', values: { 讯飞: 0.968, 华宇: 0.952, 华夏: 0.941, 新视云: 0.935, 天宇威视: 0.928, 通达海: 0.946, 云嘉: 0.922 } }
+    ]
+  };
+
+  return {
+    TARGETS: TARGETS,
+    PERIODS: PERIODS,
+    TREND_DEMO: TREND_DEMO,
+    ROLES: ROLES,
+    PRODUCT: PRODUCT,
+    STAGE_DEFS: STAGE_DEFS,
+    stageDef: stageDef,
+    ACCENTS: ACCENTS,
+    COURTS: COURTS,
+    DIALECT_ROWS: DIALECT_ROWS,
+    CRITICAL_ERRORS: CRITICAL_ERRORS,
+    COMPETITORS: COMPETITORS
+  };
+});
+
+</script>
+<script>
+/**
+ * 智慧法庭看板 · 规则引擎（纯函数，Node / 浏览器共用）
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.ZhifaRules = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var STAGE_RANK = { L5: 5, L4: 4, L3: 3, L2: 2, L1: 1 };
+
+  /**
+   * 法院轨筛选
+   * - province: 单省或「全国」（兼容旧调用）
+   * - provinces: 多选；显式传入空数组 → 空集；不传则看 province / 不限省
+   * - courtIds: 多选；显式空数组 → 空集；不传则不限法院
+   * - stages: 空数组 → 空集
+   */
+  function filterCourts(courts, opts) {
+    opts = opts || {};
+    var stages = opts.stages != null ? opts.stages : ['L3', 'L4', 'L5'];
+    if (!stages.length) return [];
+    var benchmarks = opts.benchmarks || ['全国', '省级'];
+
+    var provinceFilter = null;
+    if (Object.prototype.hasOwnProperty.call(opts, 'provinces')) {
+      if (!opts.provinces || !opts.provinces.length) return [];
+      provinceFilter = opts.provinces;
+    } else if (opts.province && opts.province !== '全国') {
+      provinceFilter = [opts.province];
+    }
+
+    var courtIdFilter = null;
+    if (Object.prototype.hasOwnProperty.call(opts, 'courtIds')) {
+      if (!opts.courtIds || !opts.courtIds.length) return [];
+      courtIdFilter = opts.courtIds;
+    }
+
+    return (courts || []).filter(function (c) {
+      if (provinceFilter && provinceFilter.indexOf(c.province) < 0) return false;
+      if (stages.indexOf(c.stage) < 0) return false;
+      if (benchmarks.indexOf(c.benchmark) < 0) return false;
+      if (courtIdFilter && courtIdFilter.indexOf(c.id) < 0) return false;
+      return true;
+    });
+  }
+
+  /** 法院下拉选项：季 ∩ 省 ∩ 阶段（不含法院勾选自身） */
+  function courtOptionList(courts, opts) {
+    opts = opts || {};
+    var fo = {
+      stages: opts.stages != null ? opts.stages : ['L3', 'L4', 'L5'],
+      benchmarks: opts.benchmarks || ['全国', '省级']
+    };
+    if (Object.prototype.hasOwnProperty.call(opts, 'provinces')) fo.provinces = opts.provinces;
+    else if (opts.province) fo.province = opts.province;
+    var period = opts.period;
+    return sortCourts(filterCourts(courts, fo).filter(function (c) {
+      return !period || !c.period || c.period === period;
+    }));
+  }
+
+  function sortCourts(courts) {
+    return (courts || []).slice().sort(function (a, b) {
+      var ba = a.benchmark === '全国' ? 1 : 0;
+      var bb = b.benchmark === '全国' ? 1 : 0;
+      if (bb !== ba) return bb - ba;
+      var sa = STAGE_RANK[a.stage] || 0;
+      var sb = STAGE_RANK[b.stage] || 0;
+      if (sb !== sa) return sb - sa;
+      return (b.usage || 0) - (a.usage || 0);
+    });
+  }
+
+  function chipFor(value, target, explicitNullTarget) {
+    if (explicitNullTarget === null) return 'pending';
+    if (value == null || target == null) return 'pending';
+    return value >= target ? 'pass' : 'fail';
+  }
+
+  function attainmentChips(court, targets) {
+    targets = targets || {};
+    return {
+      usage: chipFor(court.usage, targets.usage, court.usageTarget),
+      efficiency: chipFor(court.efficiency, targets.efficiency, court.efficiencyTarget)
+    };
+  }
+
+  function pickEvidence(courts, metricKey, targets, limit) {
+    limit = limit || 2;
+    var target = metricKey === 'usage' ? targets.usage : targets.efficiency;
+    var passed = courts.filter(function (c) {
+      return (metricKey === 'usage' ? c.usage : c.efficiency) >= target;
+    });
+    var sorted = sortCourts(passed);
+    return sorted.slice(0, limit).map(function (c) {
+      return c.name;
+    });
+  }
+
+  var ACCENT_ORDER = { 口音一般: 0, 口音明显: 1, 方言: 2 };
+
+  function dialectCandidates(dialectRows, province, dialectTarget) {
+    var rows = (dialectRows || []).filter(function (r) {
+      return r.acc != null && r.acc >= dialectTarget;
+    });
+    if (province && province !== '全国') {
+      // keep all provinces for ranking, but boost current
+    }
+    return rows
+      .map(function (r) {
+        return {
+          province: r.province,
+          accent: r.accent,
+          acc: r.acc,
+          over: r.acc - dialectTarget,
+          currentBoost: province && province !== '全国' && r.province === province ? 1 : 0,
+          accentRank: ACCENT_ORDER[r.accent] != null ? ACCENT_ORDER[r.accent] : 9
+        };
+      })
+      .sort(function (a, b) {
+        if (b.currentBoost !== a.currentBoost) return b.currentBoost - a.currentBoost;
+        if (b.over !== a.over) return b.over - a.over;
+        return a.accentRank - b.accentRank;
+      });
+  }
+
+  function buildRecommendations(args) {
+    args = args || {};
+    var courtsFiltered = args.courtsFiltered || [];
+    var dialectRows = args.dialectRows || [];
+    var province = args.province || '全国';
+    var targets = args.targets || {};
+    var max = args.max != null ? args.max : 5;
+    var out = [];
+
+    if (courtsFiltered.length) {
+      var usageEv = pickEvidence(courtsFiltered, 'usage', targets, 2);
+      if (usageEv.length) {
+        out.push({
+          type: 'usage',
+          label: '主推 AI 书记员 / 庭中·庭后笔录规整',
+          evidenceCourts: usageEv
+        });
+      }
+      var effEv = pickEvidence(courtsFiltered, 'efficiency', targets, 2);
+      if (effEv.length) {
+        out.push({
+          type: 'efficiency',
+          label: '主推智慧庭审提效',
+          evidenceCourts: effEv
+        });
+      }
+    }
+
+    var dialectSlots = Math.max(0, max - out.length);
+    var dCells = dialectCandidates(dialectRows, province, targets.dialect != null ? targets.dialect : 0.85);
+    // When province selected, still allow other provinces only after current — already sorted
+    // For national, no boost; take top by over
+    for (var i = 0; i < dCells.length && out.filter(function (x) { return x.type === 'dialect'; }).length < dialectSlots; i++) {
+      var cell = dCells[i];
+      // If province selected, only include that province's dialect chips in recommend bar
+      // (PRD: 方言推荐随省；全国则全部片区再截断)
+      if (province && province !== '全国' && cell.province !== province) continue;
+      out.push({
+        type: 'dialect',
+        label: '主推方言片区·' + cell.province + ' · ' + cell.accent + '识别',
+        dialectCell: { province: cell.province, accent: cell.accent }
+      });
+    }
+
+    if (!out.length) {
+      if (!courtsFiltered.length) {
+        out.push({
+          type: 'empty',
+          label: '本范围暂无样板法院，仅可查看产品能力（如有）'
+        });
+      } else {
+        var nearest = sortCourts(courtsFiltered).slice().sort(function (a, b) {
+          var da = Math.min(Math.abs((a.usage || 0) - (targets.usage || 0.85)), Math.abs((a.efficiency || 0) - (targets.efficiency || 0.4)));
+          var db = Math.min(Math.abs((b.usage || 0) - (targets.usage || 0.85)), Math.abs((b.efficiency || 0) - (targets.efficiency || 0.4)));
+          return da - db;
+        })[0];
+        out.push({
+          type: 'near',
+          label: '本范围暂无达标卖点',
+          evidenceCourts: nearest ? [nearest.name] : [],
+          nearNote: '接近目标，未达标'
+        });
+      }
+    }
+
+    return out.slice(0, max);
+  }
+
+  function accessRate(slots) {
+    slots = slots || {};
+    var keys = ['efficiency', 'usage', 'dialect', 'critical'];
+    var numerator = 0;
+    keys.forEach(function (k) {
+      if (slots[k]) numerator += 1;
+    });
+    var result = { numerator: numerator, denominator: 4 };
+    if (slots.dialectPartial) result.partialNote = '部分片区';
+    return result;
+  }
+
+  function buildExportRows(args) {
+    args = args || {};
+    var courts = args.courts || [];
+    var dialectRows = args.dialectRows || [];
+    var criticalErrors = args.criticalErrors || [];
+    var mode = args.mode || 'external';
+
+    var headers = ['省份', '法院', '阶段', '标杆类型', 'AI书记员开庭使用率', '智慧法庭效率提升'];
+    var rows = courts.map(function (c) {
+      return [
+        c.province,
+        c.name,
+        c.stage,
+        c.benchmark,
+        c.usage != null ? (c.usage * 100).toFixed(2) + '%' : '',
+        c.efficiency != null ? (c.efficiency * 100).toFixed(2) + '%' : ''
+      ];
+    });
+
+    headers.push('方言片区', '口音档', '方言口音识别率');
+    dialectRows.forEach(function (r) {
+      rows.push([
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        r.province,
+        r.accent,
+        r.acc == null ? '—' : (r.acc * 100).toFixed(2) + '%'
+      ]);
+    });
+
+    if (mode === 'internal') {
+      headers.push('场景', '关键信息类型', '重大错误不可接受率');
+      criticalErrors.forEach(function (e) {
+        rows.push([
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          e.scene,
+          e.infoType,
+          e.rate == null ? '—' : (e.rate * 100).toFixed(2) + '%'
+        ]);
+      });
+    }
+
+    return { headers: headers, rows: rows };
+  }
+
+  function toCsv(exportObj) {
+    function esc(v) {
+      var s = String(v == null ? '' : v);
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    var lines = [exportObj.headers.map(esc).join(',')];
+    exportObj.rows.forEach(function (r) {
+      lines.push(r.map(esc).join(','));
+    });
+    return '\uFEFF' + lines.join('\n');
+  }
+
+  function computeAccessSlots(data) {
+    data = data || {};
+    var courts = data.COURTS || [];
+    var dialect = data.DIALECT_ROWS || [];
+    var crit = data.CRITICAL_ERRORS || [];
+    var hasEff = courts.some(function (c) { return c.efficiency != null; });
+    var hasUsage = courts.some(function (c) { return c.usage != null; });
+    var dialectVals = dialect.filter(function (r) { return r.acc != null; });
+    var hasDialect = dialectVals.length > 0;
+    var dialectPartial = hasDialect && dialect.some(function (r) { return r.acc == null; });
+    var hasCritical = crit.some(function (e) { return e.infoType === '合计' && e.rate != null; });
+    return {
+      efficiency: hasEff,
+      usage: hasUsage,
+      dialect: hasDialect,
+      critical: hasCritical,
+      dialectPartial: dialectPartial,
+      voice: false
+    };
+  }
+
+  /** §6.3 范围使用率：Σ分子 / Σ分母 */
+  function aggregateUsage(courts) {
+    var num = 0;
+    var den = 0;
+    var ok = false;
+    (courts || []).forEach(function (c) {
+      if (c.usageNum == null || c.usageDen == null || c.usageDen <= 0) return;
+      num += c.usageNum;
+      den += c.usageDen;
+      ok = true;
+    });
+    if (!ok || den <= 0) return null;
+    return { value: num / den, num: num, den: den };
+  }
+
+  /** §6.3 范围效率：按开庭次数加权时长后重算 */
+  function aggregateEfficiency(courts) {
+    var tradSum = 0;
+    var smartSum = 0;
+    var weight = 0;
+    (courts || []).forEach(function (c) {
+      if (c.tradMin == null || c.smartMin == null || c.usageDen == null || c.usageDen <= 0) return;
+      tradSum += c.tradMin * c.usageDen;
+      smartSum += c.smartMin * c.usageDen;
+      weight += c.usageDen;
+    });
+    if (weight <= 0) return null;
+    var trad = tradSum / weight;
+    var smart = smartSum / weight;
+    if (trad <= 0) return null;
+    return { value: (trad - smart) / trad, trad: trad, smart: smart, weight: weight };
+  }
+
+  function attainmentCount(courts, targets) {
+    targets = targets || {};
+    var total = (courts || []).length;
+    var dual = 0;
+    var usagePass = 0;
+    var efficiencyPass = 0;
+    (courts || []).forEach(function (c) {
+      var chips = attainmentChips(c, targets);
+      if (chips.usage === 'pass') usagePass += 1;
+      if (chips.efficiency === 'pass') efficiencyPass += 1;
+      if (chips.usage === 'pass' && chips.efficiency === 'pass') dual += 1;
+    });
+    return { dual: dual, usagePass: usagePass, efficiencyPass: efficiencyPass, total: total };
+  }
+
+  /**
+   * PRD §2.4 第 4 条：指标达标率 = 达标单元 / 有目标且有数的单元
+   * 单元 = 法院 × {使用率, 效率提升}；无数或无目标（pending）不进分母
+   */
+  function indicatorAttainmentRate(courts, targets) {
+    targets = targets || {};
+    var pass = 0;
+    var denom = 0;
+    (courts || []).forEach(function (c) {
+      var chips = attainmentChips(c, targets);
+      ['usage', 'efficiency'].forEach(function (k) {
+        if (chips[k] === 'pass') { pass += 1; denom += 1; }
+        else if (chips[k] === 'fail') { denom += 1; }
+      });
+    });
+    return { rate: denom > 0 ? pass / denom : null, pass: pass, denom: denom };
+  }
+
+  function groupByProvince(courts) {
+    var map = {};
+    (courts || []).forEach(function (c) {
+      var p = c.province || '未知';
+      if (!map[p]) map[p] = [];
+      map[p].push(c);
+    });
+    return Object.keys(map).map(function (province) {
+      var list = map[province];
+      var usage = aggregateUsage(list);
+      var efficiency = aggregateEfficiency(list);
+      return {
+        province: province,
+        count: list.length,
+        courts: list,
+        usage: usage ? usage.value : null,
+        efficiency: efficiency ? efficiency.value : null,
+        usageAgg: usage,
+        efficiencyAgg: efficiency
+      };
+    }).sort(function (a, b) {
+      return (b.usage || 0) - (a.usage || 0);
+    });
+  }
+
+  /** 按周期取样板（产品页再叠省/阶段/法院用 filterCourts） */
+  function productCourtScope(courts, period) {
+    return (courts || []).filter(function (c) {
+      if (period && c.period && c.period !== period) return false;
+      return true;
+    });
+  }
+
+  function productKpis(courts, targets) {
+    var list = courts || [];
+    var usage = aggregateUsage(list);
+    var efficiency = aggregateEfficiency(list);
+    var dual = attainmentCount(list, targets);
+    var iar = indicatorAttainmentRate(list, targets);
+    return {
+      courtCount: list.length,
+      usage: usage,
+      efficiency: efficiency,
+      dualCount: dual,
+      indicatorAttainment: iar
+    };
+  }
+
+  /** 方言达标单元格数（≥ target；`/` / null 不进分母） */
+  function dialectPassCells(dialectRows, period, target) {
+    var m = dialectMatrix(dialectRows, period);
+    var pass = 0;
+    var total = 0;
+    (m.rows || []).forEach(function (r) {
+      (m.accents || []).forEach(function (a) {
+        var v = r.cells[a];
+        if (v == null || v === '/') return;
+        total += 1;
+        if (target != null && v >= target) pass += 1;
+      });
+    });
+    return { pass: pass, total: total };
+  }
+
+  function dialectMatrix(dialectRows, period) {
+    var accents = ['口音一般', '口音明显', '方言'];
+    var byProv = {};
+    (dialectRows || []).forEach(function (r) {
+      if (period && r.period && r.period !== period) return;
+      if (!byProv[r.province]) {
+        byProv[r.province] = { province: r.province, cells: {} };
+      }
+      var cell = r.acc;
+      if (cell == null) cell = '/';
+      byProv[r.province].cells[r.accent] = cell;
+    });
+    var rows = Object.keys(byProv)
+      .sort()
+      .map(function (p) {
+        accents.forEach(function (a) {
+          if (!(a in byProv[p].cells)) byProv[p].cells[a] = '/';
+        });
+        return byProv[p];
+      });
+    return { accents: accents, rows: rows };
+  }
+
+  function canExpandCriticalErrors(role) {
+    return role === 'lead' || role === 'rd';
+  }
+
+  /**
+   * 近多季趋势（随省 ∩ 阶段 ∩ 法院）
+   * - 当期季：当前筛选样板按 §2.4 聚合
+   * - 历史季：TREND_DEMO ×（当前范围/全国同阶段基线）缩放，须标演示
+   * - 全国基线：同阶段、不限省/法院（用于缩放系数）
+   */
+  function scopedMetricTrend(opts) {
+    opts = opts || {};
+    var metric = opts.metric === 'usage' ? 'usage' : 'efficiency';
+    var trendDemo = opts.trendDemo || {};
+    var periods = trendDemo.periods || [];
+    var base = trendDemo[metric] || [];
+    var currentPeriod = opts.currentPeriod;
+    var stages = opts.stages && opts.stages.length ? opts.stages : ['__none__'];
+    var benches = opts.benchmarks || ['全国', '省级'];
+    var allCourts = opts.courts || [];
+
+    function periodFilter(list) {
+      return list.filter(function (c) {
+        return !currentPeriod || !c.period || c.period === currentPeriod;
+      });
+    }
+
+    function scopedFilter() {
+      var fo = { stages: stages, benchmarks: benches };
+      if (Object.prototype.hasOwnProperty.call(opts, 'provinces')) fo.provinces = opts.provinces;
+      else if (opts.province) fo.province = opts.province;
+      if (Object.prototype.hasOwnProperty.call(opts, 'courtIds')) fo.courtIds = opts.courtIds;
+      return periodFilter(filterCourts(allCourts, fo));
+    }
+
+    var national = periodFilter(filterCourts(allCourts, {
+      stages: stages,
+      benchmarks: benches
+    }));
+    var scoped = scopedFilter();
+    var natAgg = metric === 'usage' ? aggregateUsage(national) : aggregateEfficiency(national);
+    var scAgg = metric === 'usage' ? aggregateUsage(scoped) : aggregateEfficiency(scoped);
+
+    if (!scAgg || periods.length < 2 || base.length < 2) {
+      return {
+        periods: periods,
+        values: null,
+        empty: true,
+        sourceType: 'demo',
+        currentValue: scAgg ? scAgg.value : null
+      };
+    }
+
+    var ratio = natAgg && natAgg.value > 0 ? scAgg.value / natAgg.value : 1;
+    var values = base.map(function (v, i) {
+      if (periods[i] === currentPeriod) return scAgg.value;
+      var scaled = v * ratio;
+      if (scaled < 0) return 0;
+      if (scaled > 1) return 1;
+      return scaled;
+    });
+
+    return {
+      periods: periods,
+      values: values,
+      empty: false,
+      sourceType: 'demo',
+      currentValue: scAgg.value,
+      ratio: ratio,
+      scopedCourtCount: scoped.length
+    };
+  }
+
+  return {
+    filterCourts: filterCourts,
+    courtOptionList: courtOptionList,
+    sortCourts: sortCourts,
+    attainmentChips: attainmentChips,
+    buildRecommendations: buildRecommendations,
+    accessRate: accessRate,
+    buildExportRows: buildExportRows,
+    scopedMetricTrend: scopedMetricTrend,
+    toCsv: toCsv,
+    computeAccessSlots: computeAccessSlots,
+    aggregateUsage: aggregateUsage,
+    aggregateEfficiency: aggregateEfficiency,
+    attainmentCount: attainmentCount,
+    indicatorAttainmentRate: indicatorAttainmentRate,
+    groupByProvince: groupByProvince,
+    productCourtScope: productCourtScope,
+    productKpis: productKpis,
+    dialectPassCells: dialectPassCells,
+    dialectMatrix: dialectMatrix,
+    canExpandCriticalErrors: canExpandCriticalErrors
+  };
+});
+
+</script>
+<script>
+(function () {
+  var D = window.ZhifaData;
+  var R = window.ZhifaRules;
+  if (!D || !R) {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div class="zhifa-notice" style="margin:16px;background:#fef2f2;color:#b91c1c">脚本未加载。请用浏览器直接打开本 HTML。</div>');
+    return;
+  }
+
+  var qs = new URLSearchParams(location.search);
+  /** null = 全部；[] = 空选；非空数组 = 已选 */
+  function parseListParam(key, legacyAll) {
+    if (!qs.has(key)) {
+      if (key === 'provinces' && qs.get('province') && qs.get('province') !== '全国') {
+        return [qs.get('province')];
+      }
+      return null;
+    }
+    var raw = qs.get(key);
+    if (raw === '' || raw === '__empty__') return [];
+    if (raw === '*' || raw === legacyAll) return null;
+    return raw.split(',').filter(Boolean);
+  }
+  var state = {
+    bg: qs.get('bg') || 'zhifa',
+    role: qs.get('role') || 'sales',
+    period: qs.get('period') || D.PERIODS[0],
+    provinces: parseListParam('provinces', '全国'),
+    stages: (qs.get('stages') || 'L3,L4,L5').split(',').filter(Boolean),
+    courtIds: parseListParam('courts', '*'),
+    metricKey: null,
+    rankMode: 'top'
+  };
+  if (['zhifa', 'medical', 'edu'].indexOf(state.bg) < 0) state.bg = 'zhifa';
+  if (D.ROLES.indexOf(state.role) < 0) state.role = 'sales';
+
+  var METRICS = {
+    efficiency: {
+      title: '智慧法庭效率提升', group: '成效', target: D.TARGETS.efficiency,
+      trend: D.TREND_DEMO.efficiency,
+      formula: '(传统平均时长 − 智慧平均时长) ÷ 传统平均时长；范围值按开庭次数加权时长后重算'
+    },
+    usage: {
+      title: 'AI书记员开庭使用率', group: '活跃度', target: D.TARGETS.usage,
+      trend: D.TREND_DEMO.usage,
+      formula: 'AI书记员开庭次数 ÷ 开庭次数；范围值 = Σ分子 ÷ Σ分母'
+    }
+  };
+
+  var TIPS = {
+    stage: D.STAGE_DEFS.map(function (s) {
+      return '<div class="stage-line"><span class="stage-lv">' + s.level + '</span> ' + s.name + ' — ' + s.criteria + '</div>';
+    }).join(''),
+    benchmark: '标杆类型为演示填充：L5 → 全国标杆；L3 / L4 → 省级标杆。正式接数后以主数据为准。',
+    kpi_courts: '样板法院数：当前筛选（季度 ∩ 省 ∩ 阶段 ∩ 法院）下的样板/标杆法院家数。仅为样板点，不代表全省或全国全量开庭法院。',
+    kpi_products: '覆盖产品数：当前左侧产品线下、在筛选范围内有样板数据的产品个数。本期「智慧办案场所」仅挂「智慧法庭」，有样板时为 1，无样板为 0。',
+    kpi_metrics: '接入指标数 / 总指标数：分子 = 已接入展示的指标数；分母 = 本期指标库应监测指标总数（含「有数才示、暂不进接入」的规划项）。演示 4 / 5（语音庭审效率提升计入分母、暂不计入分子）。',
+    kpi_rate: '指标达标率：当前筛选内有目标的指标单元中达标占比。单元 = 法院 × {AI书记员开庭使用率, 智慧法庭效率提升}；无数或无目标不进分母。',
+    product: '智慧法庭产品区块：右侧「N 项」为本区有目标的指标卡数（本期成效 + 活跃度共 2 项）；「达标 x%」为上述指标在当前筛选范围汇总值的达标占比。点击「查看详情」进入产品技术详情页。',
+    usage: 'AI书记员开庭使用率 = AI书记员开庭次数 ÷ 开庭次数。范围汇总 = Σ分子 ÷ Σ分母。目标 ≥' + pctInt(D.TARGETS.usage) + '；有目标才按数值着色（达标绿 / 未达标红）。',
+    efficiency: '智慧法庭效率提升 = (传统平均时长 − 智慧平均时长) ÷ 传统平均时长。范围值按开庭次数加权传统/智慧时长后重算。目标 ≥相对 ' + pctInt(D.TARGETS.efficiency) + '；有目标才按数值着色（达标绿 / 未达标红）。',
+    accent_mild: '口音一般：普通话中夹杂轻微方言口音',
+    accent_heavy: '口音明显：普通话中夹杂重的方言口音',
+    accent_pure: '方言：纯方言，完全不带普通话'
+  };
+
+  function pctInt(v) { return v == null ? '—' : Math.round(v * 100) + '%'; }
+  function pct(v) { return v == null ? '—' : (v * 100).toFixed(2) + '%'; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
+    });
+  }
+  function escAttr(s) {
+    return esc(s).replace(/\n/g, '&#10;');
+  }
+  function tone(v, t) {
+    if (v == null || t == null) return '';
+    return v >= t ? 'favorable' : 'unfavorable';
+  }
+  function stageLabel(level) {
+    return level || '—';
+  }
+  function tip(key, label) {
+    return '<span class="zhifa-tip" tabindex="0" data-tip="' + key + '" role="img" aria-label="' +
+      esc(label || '指标定义') + '">?</span>';
+  }
+  function $(id) { return document.getElementById(id); }
+
+  /* ── URL / 导航 ── */
+  function encodeList(val) {
+    if (val === null) return '*';
+    if (!val.length) return '__empty__';
+    return val.join(',');
+  }
+  function syncUrl() {
+    var p = new URLSearchParams();
+    p.set('bg', state.bg);
+    p.set('role', state.role);
+    if (state.bg === 'zhifa') {
+      p.set('period', state.period);
+      p.set('provinces', encodeList(state.provinces));
+      p.set('stages', state.stages.join(','));
+      p.set('courts', encodeList(state.courtIds));
+    }
+    history.replaceState(null, '', location.pathname + '?' + p.toString());
+  }
+  function productHref(extra) {
+    var p = new URLSearchParams();
+    p.set('role', state.role);
+    p.set('period', state.period);
+    p.set('provinces', encodeList(state.provinces));
+    p.set('stages', state.stages.join(','));
+    p.set('courts', encodeList(state.courtIds));
+    if (extra && extra.highlightProvince) {
+      p.set('provinces', extra.highlightProvince);
+      p.set('anchor', extra.anchor || 'dialect');
+    } else if (extra && extra.anchor) {
+      p.set('anchor', extra.anchor);
+    }
+    return '产品价值看板-产品详情-独立.html?' + p.toString();
+  }
+
+  /* ── 数据范围 ── */
+  function provinceOptions() {
+    var set = {};
+    D.COURTS.forEach(function (c) { set[c.province] = 1; });
+    D.DIALECT_ROWS.forEach(function (r) { set[r.province] = 1; });
+    return Object.keys(set).sort();
+  }
+  function filterOpts(includeCourts) {
+    var fo = {
+      stages: state.stages.length ? state.stages : [],
+      benchmarks: ['全国', '省级']
+    };
+    if (state.provinces !== null) fo.provinces = state.provinces;
+    if (includeCourts && state.courtIds !== null) fo.courtIds = state.courtIds;
+    return fo;
+  }
+  function filteredCourts() {
+    return R.sortCourts(R.filterCourts(D.COURTS, filterOpts(true)).filter(function (c) {
+      return c.period === state.period;
+    }));
+  }
+  function availableCourts() {
+    return R.courtOptionList(D.COURTS, Object.assign({ period: state.period }, filterOpts(false)));
+  }
+  function pruneCourtIds() {
+    if (state.courtIds === null) return;
+    var ok = {};
+    availableCourts().forEach(function (c) { ok[c.id] = 1; });
+    state.courtIds = state.courtIds.filter(function (id) { return ok[id]; });
+  }
+  function scopeLabelProvinces() {
+    if (state.provinces === null) return '全部省';
+    if (!state.provinces.length) return '未选省';
+    if (state.provinces.length <= 2) return state.provinces.join('、');
+    return '已选 ' + state.provinces.length + ' 省';
+  }
+  function scopeLabelCourts() {
+    if (state.courtIds === null) return '全部法院';
+    if (!state.courtIds.length) return '未选法院';
+    return '已选 ' + state.courtIds.length + ' 院';
+  }
+  function scopeText() {
+    var st = state.stages.length ? state.stages.join('/') : '未选阶段';
+    return state.period + ' · ' + scopeLabelProvinces() + ' · ' + st + ' · ' + scopeLabelCourts();
+  }
+  function isProvinceHighlighted(prov) {
+    if (state.provinces === null) return false;
+    return state.provinces.indexOf(prov) >= 0;
+  }
+  /** 产品头：有目标的指标卡项数 + 范围汇总值达标率（对齐教育「N 项 / 达标 x%」） */
+  function renderProductAttainment(courts) {
+    var keys = ['efficiency', 'usage'];
+    var total = keys.length;
+    var pass = 0;
+    var judged = 0;
+    keys.forEach(function (key) {
+      var agg = aggFor(key, courts);
+      if (!agg) return;
+      judged++;
+      if (agg.value >= METRICS[key].target) pass++;
+    });
+    var rateText = judged ? ('达标 ' + Math.round((pass / judged) * 100) + '%') : '达标 —';
+    $('productTip').innerHTML = tip('product', '智慧法庭定义');
+    $('productAttainment').innerHTML = '<span>' + total + ' 项</span><span>' + rateText + '</span>';
+  }
+
+  /* ── Dialog 开关 ── */
+  function closeDialogs() {
+    var d = $('metricDialog');
+    if (d && d.open) d.close();
+  }
+  function bindDialog(id, onClose) {
+    var d = $(id);
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+    d.addEventListener('close', onClose);
+  }
+
+  /* ── KPI ── */
+  /** 演示口径：指标库应监测 5 项，已接入 4（语音庭审效率提升未进分子） */
+  var KPI_METRIC_CONNECTED = 4;
+  var KPI_METRIC_TOTAL = 5;
+  function renderKpis(courts) {
+    var iar = R.indicatorAttainmentRate(courts, D.TARGETS);
+    var covered = courts.length ? 1 : 0;
+    var cards = [
+      { n: '样板法院数', tip: 'kpi_courts', v: String(courts.length), s: '当前范围 · 样板点，非全量' },
+      { n: '覆盖产品数', tip: 'kpi_products', v: String(covered), s: '智慧办案场所产品线' },
+      { n: '指标达标率', tip: 'kpi_rate', v: iar.rate == null ? '—' : pct(iar.rate),
+        s: iar.denom ? ('达标单元 ' + iar.pass + ' / ' + iar.denom) : '无有目标的指标单元' },
+      { n: '接入指标数 / 总指标数', tip: 'kpi_metrics', v: KPI_METRIC_CONNECTED + ' / ' + KPI_METRIC_TOTAL, s: '已接入 / 应监测' }
+    ];
+    $('kpiCards').innerHTML = cards.map(function (c) {
+      return '<div><dt><span class="label-text">' + c.n + '</span>' + tip(c.tip, c.n + '定义') +
+        '</dt><dd>' + c.v + '</dd><small>' + c.s + '</small></div>';
+    }).join('');
+  }
+
+  /* ── 指标卡 ── */
+  function aggFor(key, courts) {
+    return key === 'usage' ? R.aggregateUsage(courts) : R.aggregateEfficiency(courts);
+  }
+  function passCount(key, courts) {
+    var n = 0, total = 0;
+    courts.forEach(function (c) {
+      var chip = R.attainmentChips(c, D.TARGETS)[key];
+      if (chip === 'pass') { n++; total++; } else if (chip === 'fail') { total++; }
+    });
+    return { pass: n, total: total };
+  }
+  function renderMetricCards(courts) {
+    ['efficiency', 'usage'].forEach(function (key) {
+      var m = METRICS[key];
+      var agg = aggFor(key, courts);
+      var pc = passCount(key, courts);
+      var detail = key === 'usage'
+        ? (agg ? ('Σ ' + agg.num + '/' + agg.den) : '分子分母不足')
+        : (agg ? ('传统 ' + agg.trad.toFixed(1) + ' → 智慧 ' + agg.smart.toFixed(1) + ' 分钟') : '权重不足');
+      var el = $(key === 'usage' ? 'cardUsage' : 'cardEfficiency');
+      el.innerHTML =
+        '<div class="metric" role="button" tabindex="0" data-metric="' + key + '" aria-label="' + m.title + '，点击查看法院排名与趋势">' +
+        '<div class="m-name"><span class="label-text">' + m.title + '</span>' + tip(key, m.title + '定义') + '</div>' +
+        '<div class="metric-value ' + (agg ? tone(agg.value, m.target) : '') + '">' + (agg ? pct(agg.value) : '—') + '</div>' +
+        '<div class="metric-meta"><span>目标 ≥' + pctInt(m.target) + '</span><span>' + detail + '</span>' +
+        '<span>' + (pc.total ? (pc.pass + ' / ' + pc.total + ' 家达标') : '无样板法院') + '</span></div></div>';
+    });
+    document.querySelectorAll('.metric[data-metric]').forEach(function (el) {
+      function open() { openMetric(el.getAttribute('data-metric')); }
+      el.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.zhifa-tip')) { e.stopPropagation(); return; }
+        open();
+      });
+      el.addEventListener('keydown', function (e) {
+        if (e.target.closest && e.target.closest('.zhifa-tip')) return;
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+      });
+    });
+  }
+
+  /* ── 指标 Dialog ── */
+  function trendSvg(vals, periods, target) {
+    var w = 520, h = 250, pad = { l: 46, r: 30, t: 22, b: 30 };
+    var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b, n = periods.length;
+    var all = vals.concat([target]);
+    var lo = Math.max(0, Math.min.apply(null, all) - 0.08);
+    var hi = Math.min(1, Math.max.apply(null, all) + 0.08);
+    function xAt(i) { return pad.l + (n === 1 ? iw / 2 : (i / (n - 1)) * iw); }
+    function yAt(v) { return pad.t + (1 - (v - lo) / (hi - lo)) * ih; }
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="近多季趋势（演示数据）">';
+    [lo, (lo + hi) / 2, hi].forEach(function (g) {
+      svg += '<line class="axis" x1="' + pad.l + '" x2="' + (pad.l + iw) + '" y1="' + yAt(g).toFixed(1) + '" y2="' + yAt(g).toFixed(1) + '"/>' +
+        '<text class="tick" x="' + (pad.l - 6) + '" y="' + (yAt(g) + 4).toFixed(1) + '" text-anchor="end">' + Math.round(g * 100) + '%</text>';
+    });
+    svg += '<line class="chart-target" x1="' + pad.l + '" x2="' + (pad.l + iw) + '" y1="' + yAt(target).toFixed(1) + '" y2="' + yAt(target).toFixed(1) + '"/>';
+    svg += '<polyline class="series" points="' + vals.map(function (v, i) { return xAt(i).toFixed(1) + ',' + yAt(v).toFixed(1); }).join(' ') + '"/>';
+    periods.forEach(function (p, i) {
+      svg += '<circle class="dot" cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(vals[i]).toFixed(1) + '" r="3.5"/>' +
+        '<text class="tick" x="' + xAt(i).toFixed(1) + '" y="' + (yAt(vals[i]) - 9).toFixed(1) + '" text-anchor="middle" style="fill:var(--ink)">' + (vals[i] * 100).toFixed(0) + '%</text>' +
+        '<text class="tick" x="' + xAt(i).toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle">' + p + '</text>';
+    });
+    return svg + '</svg>';
+  }
+
+  function rankItems(key, courts) {
+    var m = METRICS[key];
+    var list = courts.filter(function (c) { return c[key] != null; }).map(function (c) {
+      return { name: c.name, v: c[key] };
+    });
+    var sorted = list.slice().sort(function (a, b) { return b.v - a.v; });
+    var items = state.rankMode === 'top' ? sorted.slice(0, 10) : sorted.slice().reverse().slice(0, 10);
+    var max = Math.max(m.target, 0.01);
+    list.forEach(function (x) { max = Math.max(max, x.v); });
+    return { items: items, max: max, total: list.length };
+  }
+  function renderRank() {
+    var key = state.metricKey;
+    if (!key) return;
+    var m = METRICS[key];
+    var r = rankItems(key, filteredCourts());
+    var body = $('rankBody');
+    if (!r.total) { body.innerHTML = '<div class="zhifa-empty soft">当前筛选下暂无样板法院</div>'; return; }
+    var html = '<div class="court-ranks">';
+    r.items.forEach(function (x) {
+      html += '<div class="court-rank"><span class="court-name" title="' + esc(x.name) + '">' + esc(x.name) + '</span>' +
+        '<span class="court-result"><span class="court-bar ' + (state.rankMode === 'bottom' ? 'is-bottom' : '') + '" style="width:' + (x.v / r.max * 100).toFixed(1) + '%"></span>' +
+        '<span class="court-target" style="left:' + (m.target / r.max * 100).toFixed(1) + '%"></span></span>' +
+        '<span class="court-value ' + tone(x.v, m.target) + '">' + pct(x.v) + '</span></div>';
+    });
+    html += '</div>';
+    if (r.total <= 10) html += '<div class="detail-note">当前仅 ' + r.total + ' 家样板法院，前 10 / 后 10 为同一集合的两种排序。</div>';
+    body.innerHTML = html;
+    document.querySelectorAll('#rankSwitch button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-rank') === state.rankMode ? 'true' : 'false');
+    });
+  }
+
+  function openMetric(key) {
+    var m = METRICS[key];
+    var courts = filteredCourts();
+    var agg = aggFor(key, courts);
+    var pc = passCount(key, courts);
+    var trendOpts = {
+      metric: key,
+      trendDemo: D.TREND_DEMO,
+      courts: D.COURTS,
+      currentPeriod: state.period,
+      stages: state.stages.length ? state.stages : ['__none__']
+    };
+    if (state.provinces !== null) trendOpts.provinces = state.provinces;
+    if (state.courtIds !== null) trendOpts.courtIds = state.courtIds;
+    var trend = R.scopedMetricTrend(trendOpts);
+    state.metricKey = key;
+    state.rankMode = 'top';
+    var passTxt = !agg ? '—' : (agg.value >= m.target ? '达标' : '未达标');
+    var trendHtml;
+    var trendLegend = '';
+    if (trend.empty || !trend.values) {
+      trendHtml = '<div class="zhifa-empty soft">当前筛选下暂无样板点，或有数季度不足两季，暂不展示趋势</div>';
+    } else {
+      trendLegend =
+        '<div class="chart-legend-bar" aria-hidden="true">' +
+        '<span class="legend-item legend-series">实际值</span>' +
+        '<span class="legend-item legend-target">目标 ' + pctInt(m.target) + '</span>' +
+        '</div>';
+      trendHtml = '<div class="chart-plot">' + trendSvg(trend.values, trend.periods, m.target) + '</div>';
+    }
+    $('metricPanel').innerHTML =
+      '<div class="detail-header"><div><h3 id="metricTitle">' + m.title + '</h3></div>' +
+      '<button type="button" class="detail-close" id="metricClose" aria-label="关闭">×</button></div>' +
+      '<div class="detail-card"><div class="detail-values"><span class="metric-value ' + (agg ? tone(agg.value, m.target) : '') + '">' + (agg ? pct(agg.value) : '—') + '</span>' +
+      '<span class="metric-meta"><span>目标 ≥' + pctInt(m.target) + '</span><span class="' + (agg ? tone(agg.value, m.target) : '') + '">' + passTxt + '</span>' +
+      '<span>' + (pc.total ? (pc.pass + ' / ' + pc.total + ' 家达标') : '无样板法院') + '</span></span></div></div>' +
+      '<div class="detail-charts">' +
+      '<div class="detail-card"><h5>近多季趋势 <span class="zhifa-badge demo">演示数据</span></h5>' +
+      trendLegend + trendHtml + '</div>' +
+      '<div class="detail-card"><h5>法院排名 · 当前筛选<span class="rank-switch" id="rankSwitch">' +
+      '<button type="button" data-rank="top" aria-pressed="true">前 10</button>' +
+      '<button type="button" data-rank="bottom" aria-pressed="false">后 10</button></span></h5>' +
+      '<div id="rankBody"></div></div></div>';
+    $('metricClose').addEventListener('click', function () { $('metricDialog').close(); });
+    $('rankSwitch').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rank]');
+      if (!b) return;
+      state.rankMode = b.getAttribute('data-rank');
+      renderRank();
+    });
+    renderRank();
+    if (!$('metricDialog').open) $('metricDialog').showModal();
+  }
+
+  /* ── 法院表（冻结首行+前3列；说明列截断+悬停全文；导出 Excel 含全文） ── */
+  function descCell(text) {
+    var full = text || '—';
+    return '<td class="desc-cell"><span class="desc-clamp" tabindex="0" data-full="' +
+      escAttr(full) + '">' + esc(full) + '</span></td>';
+  }
+  function csvCell(v) {
+    return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  }
+  function exportCourtsExcel() {
+    var courts = filteredCourts();
+    if (!courts.length) return;
+    var headers = [
+      '省', '市/区', '法院', '阶段', '标杆类型', '开庭次数', 'AI书记员开庭次数',
+      'AI书记员开庭使用率', '传统平均时长（分钟）', '智慧平均时长（分钟）',
+      '智慧法庭效率提升', '使用率说明', '效率说明'
+    ];
+    var lines = [headers.map(csvCell).join(',')];
+    courts.forEach(function (c) {
+      lines.push([
+        c.province, c.city, c.name, stageLabel(c.stage), c.benchmark,
+        c.usageDen, c.usageNum, pct(c.usage),
+        c.tradMin == null ? '' : c.tradMin,
+        c.smartMin == null ? '' : c.smartMin,
+        pct(c.efficiency),
+        c.usageDesc || '', c.efficiencyDesc || ''
+      ].map(csvCell).join(','));
+    });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '样板法院明细_' + state.period + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function syncExportBtn() {
+    var btn = $('btnExportCourts');
+    if (!btn) return;
+    btn.disabled = state.bg !== 'zhifa' || !filteredCourts().length;
+  }
+  function renderCourts() {
+    var courts = filteredCourts();
+    var wrap = $('courtTableWrap');
+    syncExportBtn();
+    if (!courts.length) {
+      wrap.innerHTML = '<div class="zhifa-empty">当前范围暂无样板法院</div>';
+      return;
+    }
+    var html = '<table class="zhifa-table court-freeze"><thead><tr>' +
+      '<th class="sticky-c1">省</th><th class="sticky-c2">市/区</th><th class="sticky-c3">法院</th>' +
+      '<th>阶段' + tip('stage') + '</th><th>标杆类型' + tip('benchmark') + '</th>' +
+      '<th class="num">开庭次数</th>' +
+      '<th class="num th-wrap">AI书记员<br>开庭次数</th>' +
+      '<th class="num th-wrap">AI书记员<br>开庭使用率' + tip('usage') + '</th>' +
+      '<th class="num th-wrap">传统平均<br>时长（分钟）</th>' +
+      '<th class="num th-wrap">智慧平均<br>时长（分钟）</th>' +
+      '<th class="num th-wrap">智慧法庭<br>效率提升' + tip('efficiency') + '</th>' +
+      '<th>使用率说明</th><th>效率说明</th>' +
+      '</tr></thead><tbody>';
+    courts.forEach(function (c) {
+      html += '<tr>' +
+        '<td class="sticky-c1">' + c.province + '</td><td class="sticky-c2">' + c.city + '</td><td class="sticky-c3">' + c.name + '</td>' +
+        '<td>' + stageLabel(c.stage) + '</td><td>' + c.benchmark + '</td>' +
+        '<td class="num">' + c.usageDen + '</td>' +
+        '<td class="num num-compact">' + c.usageNum + '</td>' +
+        '<td class="num num-compact"><span class="cell-value ' + tone(c.usage, D.TARGETS.usage) + '">' + pct(c.usage) + '</span></td>' +
+        '<td class="num num-compact">' + (c.tradMin == null ? '—' : c.tradMin) + '</td>' +
+        '<td class="num num-compact">' + (c.smartMin == null ? '—' : c.smartMin) + '</td>' +
+        '<td class="num num-compact"><span class="cell-value ' + tone(c.efficiency, D.TARGETS.efficiency) + '">' + pct(c.efficiency) + '</span></td>' +
+        descCell(c.usageDesc) + descCell(c.efficiencyDesc) + '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  /* ── 方言矩阵（仅此组，无指标卡） ── */
+  function cellText(v) { return (v === '/' || v == null) ? '/' : pct(v); }
+  function cellClass(v) {
+    if (v === '/' || v == null) return '';
+    return v >= D.TARGETS.dialect ? 'good' : 'bad';
+  }
+  function accentTipKey(a) {
+    if (a === '口音一般') return 'accent_mild';
+    if (a === '口音明显') return 'accent_heavy';
+    if (a === '方言') return 'accent_pure';
+    return '';
+  }
+  function renderDialect() {
+    var m = R.dialectMatrix(D.DIALECT_ROWS, state.period);
+    var html = '<table class="zhifa-matrix"><thead><tr><th>方言片区</th>';
+    m.accents.forEach(function (a) {
+      var tk = accentTipKey(a);
+      html += '<th>' + a + (tk ? tip(tk, a + '定义') : '') + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    m.rows.forEach(function (row) {
+      var hl = isProvinceHighlighted(row.province);
+      html += '<tr class="' + (hl ? 'hl' : '') + '"><td>' + row.province + '</td>';
+      m.accents.forEach(function (a) {
+        var v = row.cells[a];
+        html += '<td class="' + cellClass(v) + ' dialect-cell" data-province="' + row.province + '">' + cellText(v) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    $('dialectMatrix').innerHTML = html;
+    document.querySelectorAll('.dialect-cell').forEach(function (td) {
+      td.addEventListener('click', function () {
+        location.href = productHref({ highlightProvince: td.getAttribute('data-province'), anchor: 'dialect' });
+      });
+    });
+  }
+
+  /* ── 外壳 / 筛选 ── */
+  function renderBgShell() {
+    document.querySelectorAll('.bg-tab').forEach(function (btn) {
+      var on = btn.getAttribute('data-bg') === state.bg;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    var empty = state.bg !== 'zhifa';
+    $('bgEmpty').hidden = !empty;
+    $('bgZhifa').hidden = empty;
+    $('zhifaFilters').hidden = empty;
+    if (empty) closeDialogs();
+    syncExportBtn();
+    syncMastheadHeight();
+  }
+  function syncMastheadHeight() {
+    document.documentElement.style.setProperty('--masthead-h', $('masthead').offsetHeight + 'px');
+  }
+  function closeFilterMenus() {
+    ['provMsPanel', 'stageMsPanel', 'courtMsPanel'].forEach(function (id) {
+      var p = $(id);
+      if (p) p.hidden = true;
+    });
+    ['provMsBtn', 'stageMsBtn', 'courtMsBtn'].forEach(function (id) {
+      var b = $(id);
+      if (b) b.setAttribute('aria-expanded', 'false');
+    });
+  }
+  function syncStageBtn() {
+    var checked = state.stages.slice();
+    var btn = $('stageMsBtn');
+    if (!checked.length) btn.textContent = '请选择阶段';
+    else if (checked.length === 3) btn.textContent = '全部阶段';
+    else btn.textContent = checked.map(stageLabel).join(', ');
+  }
+  function syncProvBtn() {
+    $('provMsBtn').textContent = scopeLabelProvinces() === '未选省' ? '请选择省' : scopeLabelProvinces();
+  }
+  function syncCourtBtn() {
+    $('courtMsBtn').textContent = scopeLabelCourts() === '未选法院' ? '请选择法院' : scopeLabelCourts();
+  }
+  function fillProvPanel() {
+    var all = provinceOptions();
+    var allOn = state.provinces === null;
+    var html = '<label class="filter-option filter-option-all"><input type="checkbox" data-select-all="prov"' +
+      (allOn ? ' checked' : '') + ' /> 全选</label>';
+    all.forEach(function (p) {
+      var on = allOn || (state.provinces && state.provinces.indexOf(p) >= 0);
+      html += '<label class="filter-option"><input type="checkbox" data-province="' + esc(p) + '"' +
+        (on ? ' checked' : '') + ' /> ' + esc(p) + '</label>';
+    });
+    $('provMsPanel').innerHTML = html;
+    var allBox = $('provMsPanel').querySelector('[data-select-all="prov"]');
+    if (allBox) {
+      allBox.addEventListener('change', function () {
+        state.provinces = allBox.checked ? null : [];
+        pruneCourtIds();
+        closeDialogs();
+        setTimeout(renderAllKeepingFilters, 0);
+      });
+    }
+    $('provMsPanel').querySelectorAll('[data-province]').forEach(function (el) {
+      el.addEventListener('change', onProvChange);
+    });
+  }
+  function onProvChange() {
+    var all = provinceOptions();
+    var checked = Array.prototype.map.call(
+      document.querySelectorAll('#provMsPanel [data-province]:checked'),
+      function (x) { return x.getAttribute('data-province'); }
+    );
+    if (checked.length === all.length) state.provinces = null;
+    else state.provinces = checked;
+    pruneCourtIds();
+    closeDialogs();
+    setTimeout(renderAllKeepingFilters, 0);
+  }
+  function fillCourtPanel() {
+    var list = availableCourts();
+    var html = '';
+    if (!list.length) {
+      html = '<div class="filter-empty">当前省/阶段下无法院</div>';
+    } else {
+      var allOn = state.courtIds === null;
+      html = '<label class="filter-option filter-option-all"><input type="checkbox" data-select-all="court"' +
+        (allOn ? ' checked' : '') + ' /> 全选</label>';
+      list.forEach(function (c) {
+        var on = allOn || (state.courtIds && state.courtIds.indexOf(c.id) >= 0);
+        html += '<label class="filter-option"><input type="checkbox" data-court="' + c.id + '"' +
+          (on ? ' checked' : '') + ' /> ' + esc(c.province) + ' · ' + esc(c.name) + '</label>';
+      });
+    }
+    $('courtMsPanel').innerHTML = html;
+    var allBox = $('courtMsPanel').querySelector('[data-select-all="court"]');
+    if (allBox) {
+      allBox.addEventListener('change', function () {
+        state.courtIds = allBox.checked ? null : [];
+        closeDialogs();
+        setTimeout(renderAllKeepingFilters, 0);
+      });
+    }
+    $('courtMsPanel').querySelectorAll('[data-court]').forEach(function (el) {
+      el.addEventListener('change', onCourtChange);
+    });
+  }
+  function onCourtChange() {
+    var list = availableCourts();
+    var checked = Array.prototype.map.call(
+      document.querySelectorAll('#courtMsPanel [data-court]:checked'),
+      function (x) { return x.getAttribute('data-court'); }
+    );
+    if (list.length && checked.length === list.length) state.courtIds = null;
+    else state.courtIds = checked;
+    closeDialogs();
+    setTimeout(renderAllKeepingFilters, 0);
+  }
+  function syncStagePanel() {
+    document.querySelectorAll('#stageMsPanel [data-stage]').forEach(function (el) {
+      el.checked = state.stages.indexOf(el.getAttribute('data-stage')) >= 0;
+    });
+    var allBox = document.querySelector('#stageMsPanel [data-select-all="stage"]');
+    if (allBox) allBox.checked = state.stages.length === 3;
+  }
+
+  function openFilterIds() {
+    return ['provMsPanel', 'stageMsPanel', 'courtMsPanel'].filter(function (id) {
+      var p = $(id);
+      return p && !p.hidden;
+    });
+  }
+  function restoreFilterMenus(ids) {
+    if (!ids || !ids.length) return;
+    ids.forEach(function (id) {
+      var p = $(id);
+      if (!p) return;
+      p.hidden = false;
+      var btn = $(id.replace('Panel', 'Btn'));
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    });
+  }
+  function renderAllKeepingFilters() {
+    var opened = openFilterIds();
+    renderAll();
+    restoreFilterMenus(opened);
+  }
+  function renderAll() {
+    pruneCourtIds();
+    syncUrl();
+    renderBgShell();
+    $('btnProduct').href = productHref({});
+    if (state.bg !== 'zhifa') return;
+    $('period').value = state.period;
+    syncStagePanel();
+    syncStageBtn();
+    fillProvPanel();
+    syncProvBtn();
+    fillCourtPanel();
+    syncCourtBtn();
+    var courts = filteredCourts();
+    renderKpis(courts);
+    renderProductAttainment(courts);
+    renderMetricCards(courts);
+    renderCourts();
+    renderDialect();
+  }
+
+  /* ── Tooltip（固定定位） ── */
+  function initTooltip() {
+    var el = document.createElement('div');
+    el.className = 'table-tooltip';
+    el.hidden = true;
+    document.body.appendChild(el);
+    function place(target) {
+      var r = target.getBoundingClientRect();
+      var w = el.offsetWidth, h = el.offsetHeight;
+      var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+      var top = r.bottom + 8;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+    }
+    function showTip(target) {
+      var html = TIPS[target.getAttribute('data-tip')];
+      if (!html) return;
+      el.classList.remove('desc-tip');
+      el.innerHTML = html;
+      el.hidden = false;
+      place(target);
+    }
+    function showFull(target) {
+      var full = target.getAttribute('data-full');
+      if (full == null || full === '') return;
+      el.classList.add('desc-tip');
+      el.textContent = full.replace(/&#10;/g, '\n');
+      el.hidden = false;
+      place(target);
+    }
+    function hide() { el.hidden = true; el.classList.remove('desc-tip'); }
+    document.addEventListener('mouseover', function (e) {
+      var tipEl = e.target.closest && e.target.closest('[data-tip]');
+      if (tipEl) { showTip(tipEl); return; }
+      var fullEl = e.target.closest && e.target.closest('[data-full]');
+      if (fullEl) showFull(fullEl);
+    });
+    document.addEventListener('mouseout', function (e) {
+      if ((e.target.closest && e.target.closest('[data-tip]')) ||
+          (e.target.closest && e.target.closest('[data-full]'))) hide();
+    });
+    document.addEventListener('focusin', function (e) {
+      var tipEl = e.target.closest && e.target.closest('[data-tip]');
+      if (tipEl) { showTip(tipEl); return; }
+      var fullEl = e.target.closest && e.target.closest('[data-full]');
+      if (fullEl) showFull(fullEl);
+    });
+    document.addEventListener('focusout', hide);
+    window.addEventListener('scroll', hide, true);
+  }
+
+  function bindMsToggle(btnId, panelId) {
+    $(btnId).addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var panel = $(panelId);
+      var open = panel.hidden;
+      closeFilterMenus();
+      if (open) {
+        panel.hidden = false;
+        this.setAttribute('aria-expanded', 'true');
+      }
+    });
+    function stop(e) { e.stopPropagation(); }
+    $(panelId).addEventListener('click', stop);
+    $(panelId).addEventListener('mousedown', stop);
+  }
+
+  function init() {
+    $('role').value = state.role;
+    var period = $('period');
+    D.PERIODS.forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p; o.textContent = p; period.appendChild(o);
+    });
+
+    bindDialog('metricDialog', function () { state.metricKey = null; });
+    initTooltip();
+    $('btnExportCourts').addEventListener('click', exportCourtsExcel);
+
+    document.querySelectorAll('.bg-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.bg = btn.getAttribute('data-bg');
+        closeDialogs();
+        renderAll();
+      });
+    });
+    $('role').addEventListener('change', function () {
+      state.role = this.value;
+      syncUrl();
+      $('btnProduct').href = productHref({});
+    });
+    $('period').addEventListener('change', function () {
+      state.period = this.value;
+      pruneCourtIds();
+      closeDialogs();
+      renderAll();
+    });
+    bindMsToggle('provMsBtn', 'provMsPanel');
+    bindMsToggle('stageMsBtn', 'stageMsPanel');
+    bindMsToggle('courtMsBtn', 'courtMsPanel');
+    document.addEventListener('click', closeFilterMenus);
+    var stageAll = document.querySelector('#stageMsPanel [data-select-all="stage"]');
+    if (stageAll) {
+      stageAll.addEventListener('change', function () {
+        state.stages = stageAll.checked ? ['L3', 'L4', 'L5'] : [];
+        pruneCourtIds();
+        closeDialogs();
+        setTimeout(renderAllKeepingFilters, 0);
+      });
+    }
+    document.querySelectorAll('#stageMsPanel [data-stage]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        state.stages = Array.prototype.map.call(
+          document.querySelectorAll('#stageMsPanel [data-stage]:checked'),
+          function (x) { return x.getAttribute('data-stage'); }
+        );
+        pruneCourtIds();
+        closeDialogs();
+        setTimeout(renderAllKeepingFilters, 0);
+      });
+    });
+    $('btnReset').addEventListener('click', function () {
+      state.period = D.PERIODS[0];
+      state.provinces = null;
+      state.stages = ['L3', 'L4', 'L5'];
+      state.courtIds = null;
+      closeDialogs();
+      closeFilterMenus();
+      renderAll();
+    });
+    $('btnTheme').addEventListener('click', function () {
+      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (dark) document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', 'dark');
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      closeFilterMenus();
+      closeDialogs();
+    });
+    window.addEventListener('resize', syncMastheadHeight);
+    renderAll();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
